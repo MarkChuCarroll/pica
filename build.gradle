@@ -1,0 +1,33 @@
+
+plugins {
+  id "io.freefair.lombok" version "6.5.1"
+  id "antlr"
+  id "application"
+}
+
+group = "org.goodmath"
+version = "1.0-SNAPSHOT"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+    antlr "org.antlr:antlr4:4.5" // use ANTLR version 4
+}
+
+test {
+    useJUnitPlatform()
+}
+
+
+application {
+    mainClass = "org.goodmath.pica.Main"
+}
+
+
+generateGrammarSource {
+    arguments = arguments += ["-visitor"]
+}
+
