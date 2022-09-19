@@ -14,6 +14,8 @@ import org.goodmath.pica.errors.PicaCompilationException;
 import org.goodmath.pica.ast.AstBuilder;
 import org.goodmath.pica.ast.Definition;
 import org.goodmath.pica.ast.Identifier;
+import org.goodmath.pica.ast.PicaModule;
+import org.goodmath.pica.ast.UseDef;
 import org.goodmath.pica.errors.PicaSyntaxException;
 import org.goodmath.pica.parser.PicaGrammarLexer;
 import org.goodmath.pica.parser.PicaGrammarParser;
@@ -21,7 +23,7 @@ import org.goodmath.pica.types.Defined;
 import org.goodmath.pica.types.ModuleScope;
 import org.goodmath.pica.types.Scope;
 
-class PicaCompiler {
+public class PicaCompiler {
 
     private final List<File> modulePath;
 
@@ -29,11 +31,15 @@ class PicaCompiler {
         this.modulePath = modulePath;
     }
 
+    public List<PicaModule> getParsedModules() {
+        return Scope.RootScope.getModules();
+    }
+
     private final ArrayDeque<Identifier> compileQueue = new ArrayDeque<Identifier>();
 
     public File identifierToFile(Identifier id) {
         for (File dir: modulePath) {
-            File f = new File(id.toString().replace("::", "/") + ".schism");
+            File f = new File(dir, id.toString().replace("::", "/") + ".pica");
             if (f.exists()) {
                 return f;
             }
@@ -53,10 +59,10 @@ class PicaCompiler {
 
     void readSourceFile(Identifier id, File sourceFile) throws PicaCompilationException {
         if (!sourceFile.getName().endsWith(".pica")) {
-            throw new PicaCompilationException("Source files must be named something.pica");
+            throw new PicaCompilationException("Source files must be named module.pica, but found '"
+                + sourceFile.getName() + "'");
         }
-        // create a CharStream that reads from standard input
-        // create a CharStream that reads from standard input
+
         CharStream input;
         try {
             input = CharStreams.fromFileName(sourceFile.getPath());
@@ -73,17 +79,30 @@ class PicaCompiler {
 
         // create a parser that feeds off the tokens buffer
         var parser = new PicaGrammarParser(tokens);
+        parser.removeErrorListeners();
+        var errorListener = new PicaErrorListener(sourceFile.getPath());
+        parser.addErrorListener(errorListener);
         var treeBuilder = new AstBuilder(sourceFile.getName());
 
         try {
-            ParseTree tree = parser.module(); // begin parsing at init rule
+            // Parse a module and generate an AST.
+            ParseTree tree = parser.module();
             var walker = new ParseTreeWalker();
             walker.walk(treeBuilder, tree);
             var module = treeBuilder.getParsedModule();
 
-            System.out.println(tree.toStringTree(parser)); // print LISP-style tree
-
-            var scope = new ModuleScope(id, Optional.empty());
+            if (errorListener.getErrorCount() > 0) {
+                System.err.printf("Aborting compilation due to %d errors parsing %s\n",
+                    errorListener.getErrorCount(), sourceFile.getPath());
+            }
+            // Build a scope of named definitions from the AST.
+            var scope = new ModuleScope(id, Optional.empty(), module);
+            for (UseDef u: module.getUses()) {
+                compileQueue.push(u.getId());
+                for (Defined d: u.getDefinedNames()) {
+                    scope.setDefinition(d.getName(), d);
+                }
+            }
             for (Definition def : module.getDefinitions()) {
                 for (Defined defined : def.getDefinedNames()) {
                     scope.setDefinition(defined.getName(), defined);

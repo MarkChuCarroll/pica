@@ -15,13 +15,16 @@
 package org.goodmath.pica.ast;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.types.Defined;
 
 @JsonSerialize(using = UseDef.UseSerializer.class)
 public class UseDef extends AstNode {
@@ -42,6 +45,20 @@ public class UseDef extends AstNode {
         this.id = id;
         this.names = names;
     }
+
+    public List<Defined> getDefinedNames() {
+        if (getNames().isEmpty()) {
+            return List.of(Defined.importAlias(getId().getName(), getId()));
+        } else {
+            List<Defined> result = new ArrayList<>();
+            for (String name: getNames()) {
+                Identifier id = new Identifier(Optional.of(getId()), name, getId().getLocation());
+                result.add(Defined.importAlias(name, id));
+            }
+            return result;
+        }
+    }
+
 
     public static class UseSerializer extends JsonSerializer<UseDef> {
 

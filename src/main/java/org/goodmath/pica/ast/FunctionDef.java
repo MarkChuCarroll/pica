@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.actions.Action;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
+import org.goodmath.pica.types.Defined;
 
 import java.io.IOException;
 import java.util.List;
@@ -71,5 +72,10 @@ public class FunctionDef extends Definition {
             gen.writeObjectField("action", value.getAction());
             gen.writeEndObject();
         }
+    }
+
+    @Override
+    public List<Defined> getDefinedNames() {
+        return List.of(Defined.functionDefinition(getName(), this));
     }
 }

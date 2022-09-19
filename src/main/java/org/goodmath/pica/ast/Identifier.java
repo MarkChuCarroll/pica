@@ -17,6 +17,7 @@ package org.goodmath.pica.ast;
 import lombok.EqualsAndHashCode;
 import org.goodmath.pica.ast.locations.Location;
 
+import java.util.List;
 import java.util.Optional;
 
 @EqualsAndHashCode(callSuper = false)
@@ -45,6 +46,16 @@ public class Identifier extends AstNode {
         } else {
             return getName();
         }
+    }
+
+    public static Identifier parseIdentifier(String idStr) {
+        String[] bits = idStr.split("::");
+        Identifier current = null;
+        for (String bit: bits) {
+            current = new Identifier(Optional.ofNullable(current),
+                bit, Location.Unlocated);
+        }
+        return current;
     }
 
 

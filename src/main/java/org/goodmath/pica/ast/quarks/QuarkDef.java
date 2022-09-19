@@ -28,6 +28,7 @@ import org.goodmath.pica.ast.TypedParameter;
 import org.goodmath.pica.ast.actions.Action;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
+import org.goodmath.pica.types.Defined;
 
 import lombok.Getter;
 
@@ -107,5 +108,10 @@ public class QuarkDef extends Definition {
             gen.writeObjectField("action", value.getAction());
             gen.writeEndObject();
         }
+    }
+
+    @Override
+    public List<Defined> getDefinedNames() {
+        return List.of(Defined.quarkDefinition(getName(), this));
     }
 }

@@ -1,10 +1,13 @@
 package org.goodmath.pica.types;
 
-import org.goodmath.pica.ast.Definition;
+
 import org.goodmath.pica.ast.Identifier;
+import org.goodmath.pica.ast.PicaModule;
 import org.goodmath.pica.ast.types.Type;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -58,6 +61,17 @@ public abstract class Scope {
 
         public boolean includesModule(Identifier id) {
             return modules.containsKey(id);
+        }
+
+        public List<PicaModule> getModules() {
+            List<PicaModule> result = new ArrayList<>();
+            for (Scope s: modules.values()) {
+                if (s instanceof ModuleScope) {
+                    ModuleScope ms = (ModuleScope)s;
+                    result.add(ms.getModule());
+                }
+            }
+            return result;
         }
     };
 

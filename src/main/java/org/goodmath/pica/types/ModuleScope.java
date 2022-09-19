@@ -1,6 +1,7 @@
 package org.goodmath.pica.types;
 
 import org.goodmath.pica.ast.Identifier;
+import org.goodmath.pica.ast.PicaModule;
 import org.goodmath.pica.ast.types.Type;
 
 import java.util.Optional;
@@ -9,10 +10,16 @@ public class ModuleScope extends Scope {
 
     private final Identifier moduleName;
     private final Optional<ModuleScope> parent;
+    private final PicaModule sourceModule;
 
-    public ModuleScope(Identifier moduleName, Optional<ModuleScope> parent) {
+    public ModuleScope(Identifier moduleName, Optional<ModuleScope> parent, PicaModule sm) {
         this.moduleName = moduleName;
         this.parent = parent;
+        this.sourceModule = sm;
+    }
+
+    public PicaModule getModule() {
+        return sourceModule;
     }
 
     @Override

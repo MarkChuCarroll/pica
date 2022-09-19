@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.Definition;
 import org.goodmath.pica.ast.TypeParamSpec;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.types.Defined;
 
 @JsonSerialize(using = BosonDef.BosonDefSerializer.class)
 public class BosonDef extends Definition {
@@ -62,5 +63,10 @@ public class BosonDef extends Definition {
             gen.writeEndArray();
             gen.writeEndObject();
         }
+    }
+
+    @Override
+    public List<Defined> getDefinedNames() {
+        return List.of(Defined.bosonDefinition(getName(), this));
     }
 }
