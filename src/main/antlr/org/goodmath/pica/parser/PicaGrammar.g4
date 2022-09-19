@@ -1,3 +1,17 @@
+/* Copyright 2022, Mark C. Chu-Carroll
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 grammar PicaGrammar;
 
 @header { package org.goodmath.pica.parser; }
@@ -22,47 +36,21 @@ quarkDef:
    'quark' (typeParamBlock)? ID  argSpec
        ('composes' composes=typeList)?
        ('channels'
-          (channelDef ';')+)?
+          channelDef+)?
        ('state'
-          ( slotDef ';' )+)?
-       ('actions'
-          ( actionDef ';' )+)?
-       'end'
+          slotDef+)?
+       'action' action
+   'end'
  ;
 
 slotDef:
-   'var' ID ':' type '=' expr
+   'slot' ID ':' type '=' expr
 ;
 
 channelDef:
     'chan' ID ':' type // must be a gluon type
 ;
 
-actionDef:
-    '?' ID 'do'
-      onClause+
-    'end'
-;
-
-onClause:
-   'on' pattern '=>' action
-;
-
-pattern:
-   ID ( tuplePattern | structPattern )
-;
-
-tuplePattern:
-    '(' idList ')'
-;
-
-structPattern:
-   '{' keyedPattern ( ',' keyedPattern )* '}'
-;
-
-keyedPattern:
-   k=ID ':' v=ID
-;
 
 idList:
    ID (',' ID)*
@@ -93,7 +81,8 @@ arg:
 ;
 
 type:
-   ( typeArgBlock )? ident   # namedType
+   'chan' type # channelType
+|   ( typeArgBlock )? ident   # namedType
 |  'fun' '(' typeList? ')' '->' type  # funType
 ;
 
@@ -138,6 +127,9 @@ action:
 | '(' action ')'      # parenAction
 | lvalue '=' expr     # assignAction
 | '!' ident  '(' expr ')' # sendAction
+|  '?' ID 'do'
+        onClause+
+      'end'  # receiveAction
 | 'var' ID ':' type  '=' expr         # vardefStmt// variable definition.
 | 'if' cond=expr 'then' t=action 'else' f=action 'end'  # ifAction
 | 'while' expr 'do' action 'end'                  # whileAction
@@ -145,6 +137,27 @@ action:
 | 'return' expr                       # returnAction
 | expr                                # exprAction
 ;
+
+onClause:
+   'on' pattern '=>' action
+;
+
+pattern:
+   ID ( tuplePattern | structPattern )
+;
+
+tuplePattern:
+    '(' idList ')'
+;
+
+structPattern:
+   '{' keyedPattern ( ',' keyedPattern )* '}'
+;
+
+keyedPattern:
+   k=ID ':' v=ID
+;
+
 
 lvalue:
   ident  # simpleLvalue
@@ -160,7 +173,6 @@ expr:
   | l=expr op=('+' | '-'  )  r=expr  # addExpr
   | l=expr op=('*' | '/' | '%') r=expr  # multExpr
   | op=('not' | '-' ) expr  # negateExpr
-  | '?' ident # receiveExpr
   | expr '(' exprList? ')' # funCallExpr
   | '(' expr ')' # parenExpr
   | ident '(' exprList ')' # bosonTupleExpr

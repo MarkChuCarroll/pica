@@ -25,9 +25,21 @@ public class SourceFileLocation extends Location {
         return line;
     }
 
+    private final int col;
+    public int getCol() {
+        return col;
+    }
+
     public SourceFileLocation(String filename, int line, int col) {
         this.filename = filename;
         this.line = line;
+        this.col = col;
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s (line %d, col %d)", filename, line, col);
+    }
+
 
 }

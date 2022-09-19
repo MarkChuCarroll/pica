@@ -9,11 +9,15 @@ import java.util.Optional;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
+import org.goodmath.pica.ast.locations.SourceFileLocation;
+import org.goodmath.pica.errors.PicaCompilationException;
 import org.goodmath.pica.ast.AstBuilder;
 import org.goodmath.pica.ast.Definition;
 import org.goodmath.pica.ast.Identifier;
+import org.goodmath.pica.errors.PicaSyntaxException;
 import org.goodmath.pica.parser.PicaGrammarLexer;
 import org.goodmath.pica.parser.PicaGrammarParser;
 import org.goodmath.pica.types.Defined;
@@ -40,7 +44,7 @@ class PicaCompiler {
         return null;
     }
 
-    public void readModule(Identifier module) throws IOException {
+    public void readModule(Identifier module) throws IOException, PicaCompilationException {
         if (!Scope.RootScope.includesModule(module)) {
             if (module.getModule().isPresent()) {
                 readModule(module.getModule().get());
@@ -50,13 +54,18 @@ class PicaCompiler {
         }
     }
 
-    void readSourceFile(Identifier id, File sourceFile) throws IOException {
+    void readSourceFile(Identifier id, File sourceFile) throws PicaCompilationException {
         if (!sourceFile.getName().endsWith(".pica")) {
-            throw new RuntimeException("Source files must be named something.pica");
+            throw new PicaCompilationException("Source files must be named something.pica");
         }
         // create a CharStream that reads from standard input
         // create a CharStream that reads from standard input
-        var input = new ANTLRInputStream(new FileReader(sourceFile));
+        ANTLRInputStream input;
+        try {
+            input = new ANTLRInputStream(new FileReader(sourceFile));
+        } catch (IOException e) {
+            throw new PicaCompilationException(String.format("File %s not found", sourceFile));
+        }
 
         // create a lexer that feeds off of input CharStream
         var lexer = new PicaGrammarLexer(input);
@@ -67,22 +76,28 @@ class PicaCompiler {
 
         // create a parser that feeds off the tokens buffer
         var parser = new PicaGrammarParser(tokens);
-
-        ParseTree tree = parser.module(); // begin parsing at init rule
         var treeBuilder = new AstBuilder(sourceFile.getName());
-        var walker = new ParseTreeWalker();
-        walker.walk(treeBuilder, tree);
-        var module = treeBuilder.getParsedModule();
 
-        System.out.println(tree.toStringTree(parser)); // print LISP-style tree
+        try {
+            ParseTree tree = parser.module(); // begin parsing at init rule
+            var walker = new ParseTreeWalker();
+            walker.walk(treeBuilder, tree);
+            var module = treeBuilder.getParsedModule();
 
-        var scope = new ModuleScope(id, Optional.empty());
-        for (Definition def:  module.getDefinitions()) {
-            for (Defined defined: def.getDefinedNames()) {
-                scope.setDefinition(defined.getName(), defined);
+            System.out.println(tree.toStringTree(parser)); // print LISP-style tree
+
+            var scope = new ModuleScope(id, Optional.empty());
+            for (Definition def : module.getDefinitions()) {
+                for (Defined defined : def.getDefinedNames()) {
+                    scope.setDefinition(defined.getName(), defined);
+                }
             }
+            Scope.RootScope.setModule(id, scope);
+        } catch (RecognitionException re) {
+            var loc = new SourceFileLocation(sourceFile.toString(), re.getOffendingToken().getLine(),
+                    re.getOffendingToken().getCharPositionInLine());
+            throw new PicaSyntaxException(re.toString(), loc);
         }
-        Scope.RootScope.setModule(id, scope);
     }
 
 }

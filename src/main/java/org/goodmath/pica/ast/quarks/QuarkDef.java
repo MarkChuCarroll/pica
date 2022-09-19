@@ -14,23 +14,30 @@
  */
 package org.goodmath.pica.ast.quarks;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.Definition;
 import org.goodmath.pica.ast.TypeParamSpec;
 import org.goodmath.pica.ast.TypedParameter;
+import org.goodmath.pica.ast.actions.Action;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
 
 import lombok.Getter;
 
+@JsonSerialize(using = QuarkDef.QuarkSerializer.class)
 public class QuarkDef extends Definition {
     private final List<TypedParameter> params;
     private final List<Type> composes;
     private final List<ChannelDef> channels;
     private final List<SlotDef> slots;
-    private final List<ActionDef> actions;
+    private final Action action;
 
     public QuarkDef(String name,
         Optional<List<TypeParamSpec>> typeParams,
@@ -38,14 +45,14 @@ public class QuarkDef extends Definition {
         List<Type> composes,
         List<ChannelDef> channels,
         List<SlotDef> slots,
-        List<ActionDef> actions,
+        Action action,
         Location loc) {
             super(name, typeParams, loc);
             this.params = params;
             this.composes = composes;
             this.channels = channels;
             this.slots = slots;
-            this.actions = actions;
+            this.action = action;
         }
 
     public List<TypedParameter> getParams() {
@@ -64,7 +71,41 @@ public class QuarkDef extends Definition {
         return slots;
     }
 
-    public List<ActionDef> getActions() {
-        return actions;
+    public Action getAction() {
+        return action;
+    }
+
+    public static class QuarkSerializer extends JsonSerializer<QuarkDef> {
+
+        @Override
+        public void serialize(QuarkDef value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "quarkDef");
+            gen.writeStringField("name", value.getName());
+            if (value.getTypeParams().isPresent()) {
+                gen.writeArrayFieldStart("typeParams");
+                for (TypeParamSpec tp : value.getTypeParams().get()) {
+                    gen.writeObject(tp);
+                }
+                gen.writeEndArray();
+            }
+            gen.writeArrayFieldStart("composes");
+            for (Type t: value.getComposes()) {
+                gen.writeObject(t);
+            }
+            gen.writeEndArray();
+            gen.writeArrayFieldStart("channels");
+            for (ChannelDef c: value.getChannels()) {
+                gen.writeObject(c);
+            }
+            gen.writeEndArray();
+            gen.writeArrayFieldStart("params");
+            for (TypedParameter tp: value.getParams()) {
+                gen.writeObject(tp);
+            }
+            gen.writeEndArray();
+            gen.writeObjectField("action", value.getAction());
+            gen.writeEndObject();
+        }
     }
 }

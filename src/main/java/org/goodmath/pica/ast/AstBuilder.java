@@ -28,12 +28,12 @@ import org.goodmath.pica.ast.exprs.*;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.locations.SourceFileLocation;
 import org.goodmath.pica.ast.quarks.*;
+import org.goodmath.pica.ast.types.ChannelType;
 import org.goodmath.pica.ast.types.NamedType;
 import org.goodmath.pica.ast.types.ParameterizedType;
 import org.goodmath.pica.ast.types.Type;
 import org.goodmath.pica.parser.PicaGrammarListener;
 import org.goodmath.pica.parser.PicaGrammarParser;
-import org.goodmath.pica.parser.PicaGrammarParser.ActionDefContext;
 import org.goodmath.pica.parser.PicaGrammarParser.AddExprContext;
 import org.goodmath.pica.parser.PicaGrammarParser.ArgContext;
 import org.goodmath.pica.parser.PicaGrammarParser.ArgSpecContext;
@@ -182,10 +182,10 @@ public class AstBuilder implements PicaGrammarListener {
                         ((TempWrapper<List<TypeParamSpec>>)getAstNodeFor(tp)).value);
         var channels = ctx.channelDef().stream().map(c -> (ChannelDef)getAstNodeFor(c)).toList();
         var composes = ((TempWrapper<List<Type>>)getAstNodeFor(ctx.composes)).value;
-        var actions = ctx.actionDef().stream().map(a -> (ActionDef)getAstNodeFor(a)).toList();
+        var action = (Action)getAstNodeFor(ctx.action());
         var slots = ctx.slotDef().stream().map(s -> (SlotDef)getAstNodeFor(s)).toList();
         var params = ((TempWrapper<List<TypedParameter>>)getAstNodeFor(ctx.argSpec())).value;
-        setAstNodeFor(ctx, new QuarkDef(name, typeParams, params, composes, channels, slots, actions, loc(ctx)));
+        setAstNodeFor(ctx, new QuarkDef(name, typeParams, params, composes, channels, slots, action, loc(ctx)));
     }
 
     @Override
@@ -209,17 +209,6 @@ public class AstBuilder implements PicaGrammarListener {
         var name = ctx.ID().getText();
         var type = (Type)getAstNodeFor(ctx.type());
         setAstNodeFor(ctx, new ChannelDef(name, type, loc(ctx)));
-    }
-
-    @Override
-    public void enterActionDef(ActionDefContext ctx) {
-    }
-
-    @Override
-    public void exitActionDef(ActionDefContext ctx) {
-        var channelName = ctx.ID().getText();
-        var onClauses = ctx.onClause().stream().map(m -> (PatternAction)getAstNodeFor(m)).toList();
-        setAstNodeFor(ctx, new ActionDef(channelName, onClauses, loc(ctx)));
     }
 
     @Override
@@ -367,6 +356,16 @@ public class AstBuilder implements PicaGrammarListener {
     }
 
     @Override
+    public void enterChannelType(PicaGrammarParser.ChannelTypeContext ctx) {
+    }
+
+    @Override
+    public void exitChannelType(PicaGrammarParser.ChannelTypeContext ctx) {
+        var bosonType = (Type)getAstNodeFor(ctx.type());
+        setAstNodeFor(ctx, new ChannelType(bosonType, loc(ctx)));
+    }
+
+    @Override
     public void enterNamedType(NamedTypeContext ctx) {
     }
 
@@ -472,6 +471,17 @@ public class AstBuilder implements PicaGrammarListener {
         var name = ctx.ID().toString();
         var type = (Type)getAstNodeFor(ctx.type());
         setAstNodeFor(ctx, new TempWrapper<>(new Pair<String, Type>(name, type)));
+    }
+
+    @Override
+    public void enterReceiveAction(PicaGrammarParser.ReceiveActionContext ctx) {
+    }
+
+    @Override
+    public void exitReceiveAction(PicaGrammarParser.ReceiveActionContext ctx) {
+        var channelName = ctx.ID().getText();
+        var handlers = ctx.onClause().stream().map(o -> (PatternAction)getAstNodeFor(o)).toList();
+        setAstNodeFor(ctx, new ReceiveAction(channelName, handlers, loc(ctx)));
     }
 
     @Override
@@ -726,16 +736,6 @@ public class AstBuilder implements PicaGrammarListener {
     }
 
     @Override
-    public void enterReceiveExpr(PicaGrammarParser.ReceiveExprContext ctx) {
-    }
-
-    @Override
-    public void exitReceiveExpr(PicaGrammarParser.ReceiveExprContext ctx) {
-        var id = (Identifier)getAstNodeFor(ctx.ident());
-        setAstNodeFor(ctx, new ReceiveExpr(id, loc(ctx)));
-    }
-
-    @Override
     public void enterAddExpr(AddExprContext ctx) {
     }
 
@@ -848,7 +848,7 @@ public class AstBuilder implements PicaGrammarListener {
 
     @Override
     public void exitExprList(ExprListContext ctx) {
-        var es = ctx.expr().stream().map(e -> (Expr)getAstNodeFor(e));
+        var es = ctx.expr().stream().map(e -> (Expr)getAstNodeFor(e)).toList();
         setAstNodeFor(ctx, new TempWrapper<>(es));
     }
 
@@ -867,7 +867,7 @@ public class AstBuilder implements PicaGrammarListener {
         setAstNodeFor(ctx, id);
     }
 
-    private Location loc(ParserRuleContext ctx) {
+    public Location loc(ParserRuleContext ctx) {
         return new SourceFileLocation(moduleFile,
             ctx.start.getLine(),
             ctx.start.getCharPositionInLine());

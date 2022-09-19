@@ -1,3 +1,17 @@
+/* Copyright 2022, Mark C. Chu-Carroll
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.goodmath.pica.ast;
 
 
@@ -10,6 +24,7 @@ import org.goodmath.pica.parser.PicaGrammarLexer;
 import org.goodmath.pica.parser.PicaGrammarParser;
 import org.junit.jupiter.api.Test;
 
+import javax.tools.ForwardingFileObject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
@@ -757,16 +772,31 @@ class ParserTest {
 
     @Test
     public void testParseFunction() throws IOException {
-        var input = "fun foo(x: Int) -> Int {\n" +
-            "  if x == 0 then {\n" +
+        var input = "fun foo(x: Int): Int do\n" +
+            "  if x == 0 then \n" +
         "    return 0\n" +
-        "  } else {\n" +
-                "    return x * foo(x-1);\n" +
-            "  }\n" +
-        "}\n";
+        "  else \n" +
+                "    return x * foo(x-1)\n" +
+            "  end\n" +
+        "end\n";
 
         var m = parser(input);
         System.err.println("M = " + m.toString());
+        assertEquals("", m.toString());
+    }
+
+    @Test
+    public void testParseQuark() throws IOException {
+        String input = "quark [T]MyQuark(i: Int) \n" +
+                "  composes a::b\n" +
+                "  channels\n" +
+                "    chan C : F\n" +
+                "  state\n" +
+                "    slot sl: Int = i\n" +
+                "   action\n" +
+                "      !C(Flubber(23))\n" +
+                "end\n";
+        var m = parser(input);
         assertEquals("", m.toString());
     }
 }

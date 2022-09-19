@@ -12,30 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.goodmath.pica.ast.quarks;
+package org.goodmath.pica.ast.types;
 
-import java.util.List;
-
-import org.goodmath.pica.ast.AstNode;
 import org.goodmath.pica.ast.locations.Location;
 
-import lombok.Getter;
+public class ChannelType extends Type {
+    private final Type bosonType;
 
-public class ActionDef extends AstNode {
-    private final String channelName;
-    private final List<PatternAction> patternActions;
-
-    public ActionDef(String channelName, List<PatternAction> actions, Location loc) {
+    public ChannelType(Type bosonType, Location loc) {
         super(loc);
-        this.channelName = channelName;
-        this.patternActions = actions;
+        this.bosonType = bosonType;
     }
 
-    public String getChannelName() {
-        return channelName;
-    }
-
-    public List<PatternAction> getPatternActions() {
-        return patternActions;
+    public Type getBosonType() {
+        return bosonType;
     }
 }

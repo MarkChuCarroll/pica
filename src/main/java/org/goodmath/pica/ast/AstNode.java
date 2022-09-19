@@ -14,6 +14,10 @@
  */
 package org.goodmath.pica.ast;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+
 import org.goodmath.pica.ast.locations.Location;
 
 public abstract class AstNode {
@@ -26,5 +30,15 @@ public abstract class AstNode {
     public AstNode(Location loc) {
         this.location = loc;
     }
+
+    public String toString() {
+        try {
+            return ow.writeValueAsString(this);
+        } catch (JsonProcessingException j) {
+            throw new RuntimeException("Json error", j);
+        }
+    }
+
+    private static final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
 }

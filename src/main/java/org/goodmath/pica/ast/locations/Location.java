@@ -14,8 +14,16 @@
  */
 package org.goodmath.pica.ast.locations;
 
-public abstract class Location {
-    public static final Location Unlocated = new Location() {
-    };
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+@JsonSerialize(using = LocationSerializer.class)
+public abstract class Location {
+
+    public static final Location Unlocated = new Location() {
+        @Override
+        public String toString() {
+            return "No Location";
+        }
+    };
 }

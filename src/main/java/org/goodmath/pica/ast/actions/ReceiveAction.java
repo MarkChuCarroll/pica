@@ -1,3 +1,4 @@
+package org.goodmath.pica.ast.actions;
 /* Copyright 2022, Mark C. Chu-Carroll
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,20 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.goodmath.pica.ast.exprs;
 
-import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.ast.quarks.PatternAction;
 
-public class ReceiveExpr extends Expr {
-    private final Identifier channel;
-    public Identifier getChannel() {
+import java.util.List;
+
+public class ReceiveAction extends Action {
+    private final String channel;
+    private final List<PatternAction> patternActions;
+
+    public ReceiveAction(String channel, List<PatternAction> actions, Location loc) {
+        super(loc);
+        this.channel = channel;
+        this.patternActions = actions;
+    }
+
+    public String getChannel() {
         return channel;
     }
 
-    public ReceiveExpr(Identifier channel, Location loc) {
-        super(loc);
-        this.channel = channel;
+    public List<PatternAction> getPatternActions() {
+        return patternActions;
     }
-
 }

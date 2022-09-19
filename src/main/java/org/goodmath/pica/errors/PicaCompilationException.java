@@ -12,20 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.goodmath.pica.ast.locations;
+package org.goodmath.pica.errors;
 
+public class PicaCompilationException extends Exception {
 
-public class SystemLocation extends Location {
-    public SystemLocation(String descr) {
-        this.description = descr;
-    }
-    private final String description;
-    public String getDescription() {
-        return description;
+    public PicaCompilationException(String msg) {
+        super(msg);
     }
 
-    @Override
-    public String toString() {
-        return description;
-    }
 }
