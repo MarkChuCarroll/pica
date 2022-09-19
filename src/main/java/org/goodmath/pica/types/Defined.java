@@ -1,8 +1,6 @@
 package org.goodmath.pica.types;
 
 
-import lombok.Data;
-
 import org.goodmath.pica.ast.AstNode;
 import org.goodmath.pica.ast.Definition;
 import org.goodmath.pica.ast.FunctionDef;

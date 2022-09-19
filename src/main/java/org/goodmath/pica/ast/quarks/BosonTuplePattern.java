@@ -14,16 +14,11 @@
  */
 package org.goodmath.pica.ast.quarks;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
-import java.io.IOException;
 import java.util.List;
 
-@JsonSerialize(using = BosonStructPattern.BosonStructPatternSerializer.class)
 public class BosonTuplePattern extends BosonPattern {
 
     private final List<String> bosonFields;
@@ -37,19 +32,12 @@ public class BosonTuplePattern extends BosonPattern {
         return bosonFields;
     }
 
-    public static class BosonTuplePatternSerializer extends JsonSerializer<BosonTuplePattern> {
+    @Override
+    public TagTree getTree() {
+        return new TagTree("BosonTuplePattern",
+            List.of(new TagTree(getBosonName()),
+                new TagTree("fields",
+                    getBosonFields().stream().map(f -> new TagTree(f)).toList())));
 
-        @Override
-        public void serialize(BosonTuplePattern value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "BosonTuplePattern");
-            gen.writeStringField("name", value.getBosonName());
-            gen.writeArrayFieldStart("fields");
-            for (String field: value.getBosonFields()) {
-                gen.writeString(field);
-            }
-            gen.writeEndArray();
-            gen.writeEndObject();
-        }
     }
 }

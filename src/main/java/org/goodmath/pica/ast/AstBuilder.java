@@ -59,6 +59,7 @@ import org.goodmath.pica.parser.PicaGrammarParser.LitFloatExprContext;
 import org.goodmath.pica.parser.PicaGrammarParser.LitIntExprContext;
 import org.goodmath.pica.parser.PicaGrammarParser.LitStrExprContext;
 import org.goodmath.pica.parser.PicaGrammarParser.LogicExprContext;
+import org.goodmath.pica.parser.PicaGrammarParser.LoopActionContext;
 import org.goodmath.pica.parser.PicaGrammarParser.LvalueExprContext;
 import org.goodmath.pica.parser.PicaGrammarParser.ModuleContext;
 import org.goodmath.pica.parser.PicaGrammarParser.MultExprContext;
@@ -85,6 +86,7 @@ import org.goodmath.pica.parser.PicaGrammarParser.TypedIdListContext;
 import org.goodmath.pica.parser.PicaGrammarParser.UseDefContext;
 import org.goodmath.pica.parser.PicaGrammarParser.VardefStmtContext;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -181,7 +183,9 @@ public class AstBuilder implements PicaGrammarListener {
                 Optional.ofNullable(ctx.typeParamBlock()).map(tp ->
                         ((TempWrapper<List<TypeParamSpec>>)getAstNodeFor(tp)).value);
         var channels = ctx.channelDef().stream().map(c -> (ChannelDef)getAstNodeFor(c)).toList();
-        var composes = ((TempWrapper<List<Type>>)getAstNodeFor(ctx.composes)).value;
+        var composes = Optional.ofNullable(ctx.composes).map(c ->
+            ((TempWrapper<List<Type>>)getAstNodeFor(c)).value)
+            .orElse(Collections.emptyList());
         var action = (Action)getAstNodeFor(ctx.action());
         var slots = ctx.slotDef().stream().map(s -> (SlotDef)getAstNodeFor(s)).toList();
         var params = ((TempWrapper<List<TypedParameter>>)getAstNodeFor(ctx.argSpec())).value;
@@ -272,7 +276,7 @@ public class AstBuilder implements PicaGrammarListener {
     public void exitKeyedPattern(PicaGrammarParser.KeyedPatternContext ctx) {
         String k = ctx.k.getText();
         String f = ctx.v.getText();
-        setAstNodeFor(ctx, new TempWrapper<Pair<String, String>>(new Pair<>(k, f)));
+        setAstNodeFor(ctx, new TempWrapper<>(new Pair<>(k, f)));
     }
 
     @Override
@@ -387,7 +391,7 @@ public class AstBuilder implements PicaGrammarListener {
 
     @Override
     public void exitFunType(FunTypeContext ctx) {
-        // TODO Auto-generated method stub
+
 
     }
 
@@ -469,7 +473,7 @@ public class AstBuilder implements PicaGrammarListener {
     public void exitTypedId(TypedIdContext ctx) {
         var name = ctx.ID().toString();
         var type = (Type)getAstNodeFor(ctx.type());
-        setAstNodeFor(ctx, new TempWrapper<>(new Pair<String, Type>(name, type)));
+        setAstNodeFor(ctx, new TempWrapper<>(new Pair<>(name, type)));
     }
 
     @Override
@@ -519,7 +523,7 @@ public class AstBuilder implements PicaGrammarListener {
 
     @Override
     public void exitSequenceAction(SequenceActionContext ctx) {
-        var actions = ctx.action().stream().map(a -> (Action)getAstNodeFor(ctx)).toList();
+        var actions = ctx.action().stream().map(a -> (Action)getAstNodeFor(a)).toList();
         setAstNodeFor(ctx, new SequenceAction(actions, loc(ctx)));
     }
 
@@ -693,7 +697,7 @@ public class AstBuilder implements PicaGrammarListener {
     @Override
     public void exitNegateExpr(NegateExprContext ctx) {
         var opStr = ctx.op.getText();
-        UnaryExpr.Operator op = null;
+        UnaryExpr.Operator op;
         if (opStr.equals("not")) {
             op = UnaryExpr.Operator.Not;
         } else {
@@ -766,7 +770,7 @@ public class AstBuilder implements PicaGrammarListener {
 
     @Override
     public void exitBosonStructExpr(PicaGrammarParser.BosonStructExprContext ctx) {
-        var id = (Identifier)getAstNodeFor(ctx);
+        var id = (Identifier)getAstNodeFor(ctx.ident());
         var kvs = ((TempWrapper<Map<String, Expr>>)getAstNodeFor(ctx.keyValueList())).value;
         setAstNodeFor(ctx, new BosonStructExpr(id, kvs, loc(ctx)));
     }
@@ -870,6 +874,28 @@ public class AstBuilder implements PicaGrammarListener {
         return new SourceFileLocation(moduleFile,
             ctx.start.getLine(),
             ctx.start.getCharPositionInLine());
+    }
+
+    @Override
+    public void enterLoopAction(LoopActionContext ctx) {
+    }
+
+    @Override
+    public void exitLoopAction(LoopActionContext ctx) {
+        Action a = (Action)getAstNodeFor(ctx.action());
+        setAstNodeFor(ctx, new LoopAction(a, loc(ctx)));
+
+    }
+
+    @Override
+    public void enterExitAction(PicaGrammarParser.ExitActionContext ctx) {
+
+    }
+
+    @Override
+    public void exitExitAction(PicaGrammarParser.ExitActionContext ctx) {
+        setAstNodeFor(ctx, new ExitAction(loc(ctx)));
+
     }
 
 

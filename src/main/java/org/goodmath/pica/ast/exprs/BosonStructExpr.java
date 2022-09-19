@@ -14,17 +14,13 @@
  */
 package org.goodmath.pica.ast.exprs;
 
-import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
-@JsonSerialize(using = BosonStructExpr.BosonStructExprSerializer.class)
 public class BosonStructExpr extends Expr {
     private final Identifier tag;
     public Identifier getTag() {
@@ -43,23 +39,15 @@ public class BosonStructExpr extends Expr {
         this.fields = fields;
     }
 
-    public static class BosonStructExprSerializer extends JsonSerializer<BosonStructExpr> {
-
-        @Override
-        public void serialize(BosonStructExpr value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "BosonStructExpr");
-            gen.writeStringField("bosonOptionName", value.getTag().toString());
-            gen.writeArrayFieldStart("fields");
-            for (Map.Entry<String, Expr> e: value.getFields().entrySet()) {
-                gen.writeStartObject();
-                gen.writeStringField("name", e.getKey());
-                gen.writeObjectField("value", e.getValue());
-                gen.writeEndObject();
-            }
-            gen.writeEndArray();
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("BosonStructExpr",
+            List.of(getTag().getTree(),
+                new TagTree("fields",
+                    getFields().entrySet().stream().map(entry ->
+                        new TagTree("field",
+                            List.of(new TagTree(entry.getKey()),
+                                entry.getValue().getTree()))).toList())));
     }
 
 }

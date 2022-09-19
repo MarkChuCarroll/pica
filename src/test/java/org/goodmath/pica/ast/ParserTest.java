@@ -46,76 +46,83 @@ class ParserTest {
                   if x == 0 then\s
                     return 0
                   else\s
-                    return x * foo(x-1)
+                    return x * foo(x - 1)
                   end
                 end
                 """;
 
         String expected = """
-                {
-                  "kind" : "Module",
-                  "name" : "test",
-                  "uses" : [ ],
-                  "defs" : [ {
-                    "kind" : "fundef",
-                    "name" : "foo",
-                    "params" : [ {
-                      "kind" : "TypedParameter",
-                      "name" : "x",
-                      "type" : {
-                        "kind" : "NamedType",
-                        "name" : "Int"
-                      }
-                    } ],
-                    "returnType" : {
-                      "kind" : "NamedType",
-                      "name" : "Int"
-                    },
-                    "action" : {
-                      "kind" : "IfAction",
-                      "condition" : {
-                        "kind" : "BinaryExpr",
-                        "op" : "Eq",
-                        "left" : {
-                          "kind" : "IdentifierLvalue",
-                          "ident" : "x"
-                        },
-                        "right" : {
-                          "kind" : "LitExpr",
-                          "valueKind" : "INTLIT",
-                          "value" : "0"
+         PicaModule{
+            test
+            uses
+            defs{
+               Def::Function{
+                  foo
+                  Params{
+                     TypedParameter{
+                        x
+                        Type::Named{
+                           Identifier::Simple{
+                              Int
+                           }
                         }
-                      },
-                      "trueBranch" : {
-                        "kind" : "ReturnAction",
-                        "value" : {
-                          "kind" : "LitExpr",
-                          "valueKind" : "INTLIT",
-                          "value" : "0"
+                     }
+                  }
+                  Type::Named{
+                     Identifier::Simple{
+                        Int
+                     }
+                  }
+                  Action::If{
+                     Expr::Binary{
+                        Eq
+                        Lvalue::Identifier{
+                           Identifier::Simple{
+                              x
+                           }
                         }
-                      },
-                      "falseBranch" : {
-                        "kind" : "ReturnAction",
-                        "value" : {
-                          "kind" : "BinaryExpr",
-                          "op" : "Times",
-                          "left" : {
-                            "kind" : "IdentifierLvalue",
-                            "ident" : "x"
-                          },
-                          "right" : {
-                            "kind" : "BosonTupleExpr",
-                            "bosonOptionName" : "foo",
-                            "fields" : [ {
-                              "kind" : "IdentifierLvalue",
-                              "ident" : "x-1"
-                            } ]
-                          }
+                        Expr::Literal::INTLIT{
+                           0
                         }
-                      }
-                    }
-                  } ]
-                }""";
+                     }
+                     Action::Return{
+                        Expr::Literal::INTLIT{
+                           0
+                        }
+                     }
+                     Action::Return{
+                        Expr::Binary{
+                           Times
+                           Lvalue::Identifier{
+                              Identifier::Simple{
+                                 x
+                              }
+                           }
+                           Expr::BosonTuple{
+                              Identifier::Simple{
+                                 foo
+                              }
+                              fields{
+                                 Expr::Binary{
+                                    Minus
+                                    Lvalue::Identifier{
+                                       Identifier::Simple{
+                                          x
+                                       }
+                                    }
+                                    Expr::Literal::INTLIT{
+                                       1
+                                    }
+                                 }
+                              }
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+         }
+         """;
 
         var m = parser(input);
         assertEquals(expected, m.toString());
@@ -136,60 +143,78 @@ class ParserTest {
                 """;
 
         String expected = """
-                {
-                  "kind" : "Module",
-                  "name" : "test",
-                  "uses" : [ ],
-                  "defs" : [ {
-                    "kind" : "quarkDef",
-                    "name" : "MyQuark",
-                    "typeParams" : [ {
-                      "kind" : "TypeParam",
-                      "name" : "T"
-                    } ],
-                    "composes" : [ {
-                      "kind" : "NamedType",
-                      "name" : "a::b"
-                    } ],
-                    "channels" : [ {
-                      "kind" : "channelDef",
-                      "name" : "C",
-                      "type" : {
-                        "kind" : "NamedType",
-                        "name" : "F"
-                      }
-                    } ],
-                    "params" : [ {
-                      "kind" : "TypedParameter",
-                      "name" : "i",
-                      "type" : {
-                        "kind" : "NamedType",
-                        "name" : "Int"
-                      }
-                    } ],
-                    "action" : {
-                      "kind" : "SendAction",
-                      "id" : "C",
-                      "value" : {
-                        "kind" : "BosonTupleExpr",
-                        "bosonOptionName" : "Flubber",
-                        "fields" : [ {
-                          "kind" : "BinaryExpr",
-                          "op" : "Plus",
-                          "left" : {
-                            "kind" : "LitExpr",
-                            "valueKind" : "INTLIT",
-                            "value" : "23"
-                          },
-                          "right" : {
-                            "kind" : "IdentifierLvalue",
-                            "ident" : "x"
-                          }
-                        } ]
-                      }
-                    }
-                  } ]
-                }""";
+         PicaModule{
+            test
+            uses
+            defs{
+               Def::Quark{
+                  typeParams{
+                     TypedParamSpec{
+                        T
+                     }
+                  }
+                  params{
+                     TypedParameter{
+                        i
+                        Type::Named{
+                           Identifier::Simple{
+                              Int
+                           }
+                        }
+                     }
+                  }
+                  channels{
+                     ChannelDef{
+                        C
+                        Type::Named{
+                           Identifier::Simple{
+                              F
+                           }
+                        }
+                     }
+                  }
+                  slots{
+                     SlotDef{
+                        sl
+                        Type::Named{
+                           Identifier::Simple{
+                              Int
+                           }
+                        }
+                        Lvalue::Identifier{
+                           Identifier::Simple{
+                              i
+                           }
+                        }
+                     }
+                  }
+                  Action::Send{
+                     Identifier::Simple{
+                        C
+                     }
+                     Expr::BosonTuple{
+                        Identifier::Simple{
+                           Flubber
+                        }
+                        fields{
+                           Expr::Binary{
+                              Plus
+                              Expr::Literal::INTLIT{
+                                 23
+                              }
+                              Lvalue::Identifier{
+                                 Identifier::Simple{
+                                    x
+                                 }
+                              }
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+         }
+         """;
         var m = parser(input);
         assertEquals(expected, m.toString());
     }
@@ -206,55 +231,407 @@ class ParserTest {
                 """;
 
         String expected = """
-                {
-                  "kind" : "Module",
-                  "name" : "test",
-                  "uses" : [ {
-                    "kind" : "UseDef",
-                    "module" : "a::bb::ccc",
-                    "names" : [ "d", "e" ]
-                  } ],
-                  "defs" : [ {
-                    "kind" : "BosonDef",
-                    "name" : "Speckle",
-                    "typeParams" : [ {
-                      "kind" : "TypeParam",
-                      "name" : "T"
-                    }, {
-                      "kind" : "TypeParam",
-                      "name" : "U"
-                    } ],
-                    "options" : [ {
-                      "kind" : "BosonTuple",
-                      "name" : "One",
-                      "fields" : [ {
-                        "kind" : "NamedType",
-                        "name" : "Int"
-                      }, {
-                        "kind" : "NamedType",
-                        "name" : "Int"
-                      } ]
-                    }, {
-                      "kind" : "BosonStruct",
-                      "name" : "Two",
-                      "fields" : [ {
-                        "name" : "v",
-                        "value" : {
-                          "kind" : "NamedType",
-                          "name" : "Float"
+         PicaModule{
+            test
+            uses{
+               Def::Use{
+                  Identifier::Scoped{
+                     Identifier::Scoped{
+                        Identifier::Simple{
+                           a
                         }
-                      }, {
-                        "name" : "name",
-                        "value" : {
-                          "kind" : "NamedType",
-                          "name" : "String"
+                        bb
+                     }
+                     ccc
+                  }
+                  names{
+                     d
+                     e
+                  }
+               }
+            }
+            defs{
+               Def::BosonDef{
+                  Speckle
+                  typeParams{
+                     TypedParamSpec{
+                        T
+                     }
+                     TypedParamSpec{
+                        U
+                     }
+                  }
+                  options{
+                     BosonOption::Tuple{
+                        One
+                        fields{
+                           Type::Named{
+                              Identifier::Simple{
+                                 Int
+                              }
+                           }
+                           Type::Named{
+                              Identifier::Simple{
+                                 Int
+                              }
+                           }
                         }
-                      } ]
-                    } ]
-                  } ]
-                }""";
+                     }
+                     BosonOption::Struct{
+                        Two
+                        fields{
+                           field{
+                              v
+                              Type::Named{
+                                 Identifier::Simple{
+                                    Float
+                                 }
+                              }
+                           }
+                           field{
+                              name
+                              Type::Named{
+                                 Identifier::Simple{
+                                    String
+                                 }
+                              }
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+         }
+         """;
+
         var m = parser(input);
         assertEquals(expected, m.toString());
+    }
+
+    @Test
+    public void testAnother() {
+      String input = """
+        boson ScannerOutput is
+          Token{type: String, content: String, line: Int}
+        or  EndOfStream(Unit)
+        or  ScanError{message: String, line: Int}
+        end
+
+        quark Scanner(inp: InputStream)
+          channels
+            chan output: ScannerOutput
+          state
+            slot input: InputStream = inp
+            slot currentToken: String = ""
+        action
+          repeat
+            ? input do
+                on More(c) do
+                    currentToken = currentToken + c;
+                    if  something > other then
+                        !output(Token{type: "t", content: currentToken, line: 23});
+                        currentToken = ""
+                    else
+                        Unit
+                    end
+                end
+                on End(u) do
+                    !output(Token{type: "t", content: currentToken, line: 18});
+                    !output(EndOfStream(Unit));
+                    exit
+                end
+            end
+          end
+        end
+      """;
+      var m = parser(input);
+      String expected = """
+       PicaModule{
+          test
+          uses
+          defs{
+             Def::BosonDef{
+                ScannerOutput
+                options{
+                   BosonOption::Struct{
+                      Token
+                      fields{
+                         field{
+                            line
+                            Type::Named{
+                               Identifier::Simple{
+                                  Int
+                               }
+                            }
+                         }
+                         field{
+                            type
+                            Type::Named{
+                               Identifier::Simple{
+                                  String
+                               }
+                            }
+                         }
+                         field{
+                            content
+                            Type::Named{
+                               Identifier::Simple{
+                                  String
+                               }
+                            }
+                         }
+                      }
+                   }
+                   BosonOption::Tuple{
+                      EndOfStream
+                      fields{
+                         Type::Named{
+                            Identifier::Simple{
+                               Unit
+                            }
+                         }
+                      }
+                   }
+                   BosonOption::Struct{
+                      ScanError
+                      fields{
+                         field{
+                            line
+                            Type::Named{
+                               Identifier::Simple{
+                                  Int
+                               }
+                            }
+                         }
+                         field{
+                            message
+                            Type::Named{
+                               Identifier::Simple{
+                                  String
+                               }
+                            }
+                         }
+                      }
+                   }
+                }
+             }
+             Def::Quark{
+                params{
+                   TypedParameter{
+                      inp
+                      Type::Named{
+                         Identifier::Simple{
+                            InputStream
+                         }
+                      }
+                   }
+                }
+                channels{
+                   ChannelDef{
+                      output
+                      Type::Named{
+                         Identifier::Simple{
+                            ScannerOutput
+                         }
+                      }
+                   }
+                }
+                slots{
+                   SlotDef{
+                      input
+                      Type::Named{
+                         Identifier::Simple{
+                            InputStream
+                         }
+                      }
+                      Lvalue::Identifier{
+                         Identifier::Simple{
+                            inp
+                         }
+                      }
+                   }
+                   SlotDef{
+                      currentToken
+                      Type::Named{
+                         Identifier::Simple{
+                            String
+                         }
+                      }
+                      Expr::Literal::STRLIT{
+                         ""
+                      }
+                   }
+                }
+                Action::Loop{
+                   Action::Receive{
+                      input
+                      patternActions{
+                         BosonMessagePatternAction{
+                            BosonTuplePattern{
+                               More
+                               fields{
+                                  c
+                               }
+                            }
+                            Action::Sequence{
+                               Action/Assignment{
+                                  Lvalue::Identifier{
+                                     Identifier::Simple{
+                                        currentToken
+                                     }
+                                  }
+                                  Expr::Binary{
+                                     Plus
+                                     Lvalue::Identifier{
+                                        Identifier::Simple{
+                                           currentToken
+                                        }
+                                     }
+                                     Lvalue::Identifier{
+                                        Identifier::Simple{
+                                           c
+                                        }
+                                     }
+                                  }
+                               }
+                               Action::If{
+                                  Expr::Binary{
+                                     Greater
+                                     Lvalue::Identifier{
+                                        Identifier::Simple{
+                                           something
+                                        }
+                                     }
+                                     Lvalue::Identifier{
+                                        Identifier::Simple{
+                                           other
+                                        }
+                                     }
+                                  }
+                                  Action::Sequence{
+                                     Action::Send{
+                                        Identifier::Simple{
+                                           output
+                                        }
+                                        BosonStructExpr{
+                                           Identifier::Simple{
+                                              Token
+                                           }
+                                           fields{
+                                              field{
+                                                 line
+                                                 Expr::Literal::INTLIT{
+                                                    23
+                                                 }
+                                              }
+                                              field{
+                                                 type
+                                                 Expr::Literal::STRLIT{
+                                                    "t"
+                                                 }
+                                              }
+                                              field{
+                                                 content
+                                                 Lvalue::Identifier{
+                                                    Identifier::Simple{
+                                                       currentToken
+                                                    }
+                                                 }
+                                              }
+                                           }
+                                        }
+                                     }
+                                     Action/Assignment{
+                                        Lvalue::Identifier{
+                                           Identifier::Simple{
+                                              currentToken
+                                           }
+                                        }
+                                        Expr::Literal::STRLIT{
+                                           ""
+                                        }
+                                     }
+                                  }
+                                  Action::Expr{
+                                     Lvalue::Identifier{
+                                        Identifier::Simple{
+                                           Unit
+                                        }
+                                     }
+                                  }
+                               }
+                            }
+                         }
+                         BosonMessagePatternAction{
+                            BosonTuplePattern{
+                               End
+                               fields{
+                                  u
+                               }
+                            }
+                            Action::Sequence{
+                               Action::Send{
+                                  Identifier::Simple{
+                                     output
+                                  }
+                                  BosonStructExpr{
+                                     Identifier::Simple{
+                                        Token
+                                     }
+                                     fields{
+                                        field{
+                                           line
+                                           Expr::Literal::INTLIT{
+                                              18
+                                           }
+                                        }
+                                        field{
+                                           type
+                                           Expr::Literal::STRLIT{
+                                              "t"
+                                           }
+                                        }
+                                        field{
+                                           content
+                                           Lvalue::Identifier{
+                                              Identifier::Simple{
+                                                 currentToken
+                                              }
+                                           }
+                                        }
+                                     }
+                                  }
+                               }
+                               Action::Sequence{
+                                  Action::Send{
+                                     Identifier::Simple{
+                                        output
+                                     }
+                                     Expr::BosonTuple{
+                                        Identifier::Simple{
+                                           EndOfStream
+                                        }
+                                        fields{
+                                           Lvalue::Identifier{
+                                              Identifier::Simple{
+                                                 Unit
+                                              }
+                                           }
+                                        }
+                                     }
+                                  }
+                                  Action::Exit
+                               }
+                            }
+                         }
+                      }
+                   }
+                }
+             }
+          }
+       }
+       """;
+      assertEquals(expected, m.toString());
     }
 
 }

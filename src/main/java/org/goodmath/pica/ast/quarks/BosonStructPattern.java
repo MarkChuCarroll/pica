@@ -14,16 +14,12 @@
  */
 package org.goodmath.pica.ast.quarks;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
-import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
-@JsonSerialize(using = BosonStructPattern.BosonStructPatternSerializer.class)
 public class BosonStructPattern extends BosonPattern {
     private final Map<String, String> bosonFields;
 
@@ -36,24 +32,16 @@ public class BosonStructPattern extends BosonPattern {
         return bosonFields;
     }
 
-    public static class BosonStructPatternSerializer extends JsonSerializer<BosonStructPattern> {
-
-        @Override
-        public void serialize(BosonStructPattern value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "BosonStructPattern");
-            gen.writeStringField("name", value.getName());
-            gen.writeObjectFieldStart("fields");
-            for (Map.Entry<String, String> e : value.getBosonFields().entrySet()) {
-                gen.writeStartObject();
-                gen.writeStringField("kind", "BosonFieldPattern");
-                gen.writeStringField("bosonFieldName", e.getKey());
-                gen.writeStringField("boundVariableName", e.getValue());
-                gen.writeEndObject();
-            }
-            gen.writeEndObject();
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("BosonStructPattern",
+            List.of(
+                new TagTree(getName()),
+                new TagTree("fields",
+                    getBosonFields().entrySet().stream().map(entry ->
+                       new TagTree("bosonField",
+                          List.of(new TagTree(entry.getKey()),
+                            new TagTree(entry.getValue())))).toList())));
     }
 
 }

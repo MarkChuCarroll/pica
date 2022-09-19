@@ -14,14 +14,13 @@
  */
 package org.goodmath.pica.ast.quarks;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+
 import org.goodmath.pica.ast.AstNode;
 import org.goodmath.pica.ast.actions.Action;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
-import java.io.IOException;
+import java.util.List;
 
 public class BosonMessagePatternAction extends AstNode {
     private final BosonPattern pattern;
@@ -41,16 +40,10 @@ public class BosonMessagePatternAction extends AstNode {
         return action;
     }
 
-    public static class BosonMessagePatternActionSerializer extends JsonSerializer<BosonMessagePatternAction> {
-
-        @Override
-        public void serialize(BosonMessagePatternAction value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "BosonMessagePatternAction");
-            gen.writeObjectField("pattern", value.getPattern());
-            gen.writeObjectField("action", value.getAction());
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("BosonMessagePatternAction",
+            List.of(getPattern().getTree(), getAction().getTree()));
     }
 }
 

@@ -14,17 +14,13 @@
  */
 package org.goodmath.pica.ast.bosons;
 
-import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
+import org.goodmath.pica.util.TagTree;
 
-@JsonSerialize(using = BosonStructOption.BosonStructOptionSerializer.class)
 public class BosonStructOption extends BosonOption {
     private final Map<String, Type> fields;
 
@@ -37,23 +33,19 @@ public class BosonStructOption extends BosonOption {
         this.fields = fields;
     }
 
-    public static class BosonStructOptionSerializer extends JsonSerializer<BosonStructOption> {
 
-        @Override
-        public void serialize(BosonStructOption value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "BosonStruct");
-            gen.writeStringField("name", value.getName());
-            gen.writeArrayFieldStart("fields");
-            for (Map.Entry<String, Type> e: value.getFields().entrySet()) {
-                gen.writeStartObject();
-                gen.writeStringField("name", e.getKey());
-                gen.writeObjectField("value", e.getValue());
-                gen.writeEndObject();
-            }
-            gen.writeEndArray();
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("BosonOption::Struct",
+            List.of(
+                new TagTree(getName()),
+                new TagTree("fields",
+                    getFields().entrySet().stream().map(entry ->
+                        new TagTree("field",
+                           List.of(new TagTree(entry.getKey()),
+                           entry.getValue().getTree())))
+                           .toList())));
+
     }
 
 }

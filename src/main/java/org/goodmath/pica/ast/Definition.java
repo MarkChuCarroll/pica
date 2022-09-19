@@ -14,7 +14,6 @@
  */
 package org.goodmath.pica.ast;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 

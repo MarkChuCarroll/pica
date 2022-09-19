@@ -14,18 +14,14 @@
  */
 package org.goodmath.pica.ast.quarks;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.AstNode;
 import org.goodmath.pica.ast.exprs.Expr;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
+import org.goodmath.pica.util.TagTree;
 
-import java.io.IOException;
+import java.util.List;
 
-@JsonSerialize(using= SlotDef.SlotDefSerializer.class)
 public class SlotDef extends AstNode {
     private final String name;
     private final Type type;
@@ -50,15 +46,11 @@ public class SlotDef extends AstNode {
         return initValue;
     }
 
-    public static class SlotDefSerializer extends JsonSerializer<SlotDef> {
-
-        @Override
-        public void serialize(SlotDef value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "SlotDef");
-            gen.writeStringField("name", value.name);
-            gen.writeObjectField("type", value.getType());
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("SlotDef",
+            List.of(new TagTree(getName()),
+                getType().getTree(),
+                getInitValue().getTree()));
     }
 }

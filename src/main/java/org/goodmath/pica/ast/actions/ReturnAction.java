@@ -14,16 +14,12 @@
  */
 package org.goodmath.pica.ast.actions;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.exprs.Expr;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
-import java.io.IOException;
+import java.util.List;
 
-@JsonSerialize(using = ReturnAction.ReturnActionSerializer.class)
 public class ReturnAction extends Action {
     private final Expr expr;
 
@@ -36,15 +32,10 @@ public class ReturnAction extends Action {
         this.expr = expr;
     }
 
-    public static class ReturnActionSerializer extends JsonSerializer<ReturnAction> {
-
-        @Override
-        public void serialize(ReturnAction value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "ReturnAction");
-            gen.writeObjectField("value", value.getExpr());
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("Action::Return",
+            List.of(getExpr().getTree()));
     }
 
 }

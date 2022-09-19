@@ -16,6 +16,7 @@ package org.goodmath.pica.ast;
 
 import lombok.EqualsAndHashCode;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +57,17 @@ public class Identifier extends AstNode {
                 bit, Location.Unlocated);
         }
         return current;
+    }
+
+    @Override
+    public TagTree getTree() {
+        if (moduleId.isPresent()) {
+            return new TagTree("Identifier::Scoped",
+                List.of(getModule().get().getTree(),
+                    new TagTree(getName())));
+        } else {
+            return new TagTree("Identifier::Simple", List.of(new TagTree(getName())));
+        }
     }
 
 

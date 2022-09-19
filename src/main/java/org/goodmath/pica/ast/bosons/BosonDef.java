@@ -14,20 +14,16 @@
  */
 package org.goodmath.pica.ast.bosons;
 
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.Definition;
 import org.goodmath.pica.ast.TypeParamSpec;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.types.Defined;
+import org.goodmath.pica.util.TagTree;
 
-@JsonSerialize(using = BosonDef.BosonDefSerializer.class)
 public class BosonDef extends Definition {
 
     private final List<BosonOption> options;
@@ -42,31 +38,23 @@ public class BosonDef extends Definition {
         return options;
     }
 
-    public static class BosonDefSerializer extends JsonSerializer<BosonDef> {
-
-        @Override
-        public void serialize(BosonDef value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "BosonDef");
-            gen.writeStringField("name", value.getName());
-            if (value.getTypeParams().isPresent()) {
-                gen.writeArrayFieldStart("typeParams");
-                for (TypeParamSpec tp : value.getTypeParams().get()) {
-                    gen.writeObject(tp);
-                }
-                gen.writeEndArray();
-            }
-            gen.writeArrayFieldStart("options");
-            for (BosonOption bo : value.getOptions()) {
-                gen.writeObject(bo);
-            }
-            gen.writeEndArray();
-            gen.writeEndObject();
-        }
-    }
-
     @Override
     public List<Defined> getDefinedNames() {
         return List.of(Defined.bosonDefinition(getName(), this));
+    }
+
+    @Override
+    public TagTree getTree() {
+        List<TagTree> children = new ArrayList<>();
+        children.add(new TagTree(getName()));
+        getTypeParams().ifPresent(tps ->
+            children.add(new TagTree("typeParams",
+                tps.stream().map(TypeParamSpec::getTree).toList()
+            )));
+        children.add(new TagTree("options",
+            getOptions().stream().map(BosonOption::getTree).toList()));
+
+        return new TagTree("Def::BosonDef",
+            children);
     }
 }

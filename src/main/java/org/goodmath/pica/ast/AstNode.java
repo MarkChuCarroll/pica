@@ -14,11 +14,9 @@
  */
 package org.goodmath.pica.ast;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
 public abstract class AstNode {
     private final Location location;
@@ -31,14 +29,11 @@ public abstract class AstNode {
         this.location = loc;
     }
 
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        } catch (JsonProcessingException j) {
-            throw new RuntimeException("Json error", j);
-        }
-    }
+    public abstract TagTree getTree();
 
-    private static final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+
+    public String toString() {
+        return getTree().toString();
+    }
 
 }

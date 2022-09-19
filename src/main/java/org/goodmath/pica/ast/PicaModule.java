@@ -14,16 +14,11 @@
  */
 package org.goodmath.pica.ast;
 
-import java.io.IOException;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
-@JsonSerialize(using = PicaModule.PicaModuleSerializer.class)
 public class PicaModule extends AstNode {
     public PicaModule(String name, List<UseDef> useDefs, List<Definition> defs, Location loc) {
         super(loc);
@@ -48,24 +43,17 @@ public class PicaModule extends AstNode {
         return definitions;
     }
 
-    public static class PicaModuleSerializer extends JsonSerializer<PicaModule> {
 
-        @Override
-        public void serialize(PicaModule value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "Module");
-            gen.writeStringField("name", value.getName());
-            gen.writeArrayFieldStart("uses");
-            for (UseDef u: value.getUses()) {
-                gen.writeObject(u);
-            }
-            gen.writeEndArray();
-            gen.writeArrayFieldStart("defs");
-            for (Definition d: value.getDefinitions()) {
-                gen.writeObject(d);
-            }
-            gen.writeEndArray();
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("PicaModule",
+            List.of(
+                new TagTree(getName()),
+                new TagTree("uses",
+                    getUses().stream().map(UseDef::getTree).toList()),
+                new TagTree("defs",
+                    getDefinitions().stream().map(Definition::getTree).toList())));
+
     }
+
 }

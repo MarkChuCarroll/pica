@@ -17,7 +17,7 @@ package org.goodmath.pica.ast.bosons;
 import org.goodmath.pica.ast.AstNode;
 import org.goodmath.pica.ast.locations.Location;
 
-public class BosonOption extends AstNode {
+public abstract class BosonOption extends AstNode {
     private final String name;
 
     public String getName() {

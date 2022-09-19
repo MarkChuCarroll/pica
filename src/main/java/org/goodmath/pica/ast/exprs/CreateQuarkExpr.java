@@ -14,17 +14,12 @@
  */
 package org.goodmath.pica.ast.exprs;
 
-import java.io.IOException;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
+import org.goodmath.pica.util.TagTree;
 
-@JsonSerialize(using = CreateQuarkExpr.CreateQuarkExprSerializer.class)
 public class CreateQuarkExpr extends Expr {
     private final Type quarkType;
     public Type getQuarkType() {
@@ -43,20 +38,12 @@ public class CreateQuarkExpr extends Expr {
         this.args = args;
     }
 
-    public static class CreateQuarkExprSerializer extends JsonSerializer<CreateQuarkExpr> {
-
-        @Override
-        public void serialize(CreateQuarkExpr value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "CreateQuarkExpr");
-            gen.writeObjectField("type", value.getQuarkType());
-            gen.writeArrayFieldStart("args");
-            for (Expr e: value.getArgs()) {
-                gen.writeObject(e);
-            }
-            gen.writeEndArray();
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("Expr::CreateQuark",
+            List.of(getQuarkType().getTree(),
+                new TagTree("args",
+                    getArgs().stream().map(Expr::getTree).toList())));
     }
 
 }

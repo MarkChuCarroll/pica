@@ -127,19 +127,21 @@ action:
 | '(' action ')'      # parenAction
 | lvalue '=' expr     # assignAction
 | '!' ident  '(' expr ')' # sendAction
-|  '?' ID 'do'
+| '?' ID 'do'
         onClause+
       'end'  # receiveAction
 | 'var' ID ':' type  '=' expr         # vardefStmt// variable definition.
 | 'if' cond=expr 'then' t=action 'else' f=action 'end'  # ifAction
 | 'while' expr 'do' action 'end'                  # whileAction
+| 'repeat' action 'end' # loopAction
 | 'for' ID 'in' expr 'do' action  'end'           # forAction
 | 'return' expr                       # returnAction
 | expr                                # exprAction
+| 'exit'  # exitAction
 ;
 
 onClause:
-   'on' pattern '=>' action
+   'on' pattern 'do' action 'end'
 ;
 
 pattern:
@@ -205,8 +207,8 @@ ID : [a-zA-Z_]+ [-a-zA-Z0-9_]*
 ;
 
 LIT_SYMBOL:
-    '#' ([a-zA-Z_]+ [-a-zA-Z0-9_]*
-           | [-+!@$%^&*/;?']+);
+    '#' [a-zA-Z_]+ [-a-zA-Z0-9_]*
+;
 
 LIT_STRING :  '"' (ESC | ~["\\])* '"' ;
 

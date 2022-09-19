@@ -14,20 +14,16 @@
  */
 package org.goodmath.pica.ast;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.actions.Action;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
 import org.goodmath.pica.types.Defined;
+import org.goodmath.pica.util.TagTree;
 
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@JsonSerialize(using = FunctionDef.FDSerializer.class)
 public class FunctionDef extends Definition {
     private final List<TypedParameter> params;
     private final Type resultType;
@@ -56,26 +52,27 @@ public class FunctionDef extends Definition {
         return action;
     }
 
-    public static class FDSerializer extends JsonSerializer<FunctionDef> {
-
-        @Override
-        public void serialize(FunctionDef value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "fundef");
-            gen.writeStringField("name", value.getName());
-            gen.writeArrayFieldStart("params");
-            for (TypedParameter tp: value.getParams()) {
-                gen.writeObject(tp);
-            }
-            gen.writeEndArray();
-            gen.writeObjectField("returnType", value.getResultType());
-            gen.writeObjectField("action", value.getAction());
-            gen.writeEndObject();
-        }
-    }
-
     @Override
     public List<Defined> getDefinedNames() {
         return List.of(Defined.functionDefinition(getName(), this));
+    }
+
+    @Override
+    public TagTree getTree() {
+        List<TagTree> children = new ArrayList<>();
+        children.add(new TagTree(getName()));
+        getTypeParams().ifPresent(tps ->
+            children.add(new TagTree("TypeParams",
+                tps.stream().map(TypeParamSpec::getTree).toList()))
+        );
+        children.add(new TagTree("Params",
+            getParams().stream().map(TypedParameter::getTree).toList()));
+        children.add(getResultType().getTree());
+        children.add(getAction().getTree());
+
+
+        return new TagTree("Def::Function",
+            children);
+
     }
 }

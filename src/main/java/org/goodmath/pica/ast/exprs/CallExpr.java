@@ -14,16 +14,11 @@
  */
 package org.goodmath.pica.ast.exprs;
 
-import java.io.IOException;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
-@JsonSerialize(using = CallExpr.CallExprSerializer.class)
 public class CallExpr extends Expr {
     private final Expr target;
     public Expr getTarget() {
@@ -42,20 +37,12 @@ public class CallExpr extends Expr {
         this.args = args;
     }
 
-    public static class CallExprSerializer extends JsonSerializer<CallExpr> {
-
-        @Override
-        public void serialize(CallExpr value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "CallExpr");
-            gen.writeObjectField("function", value.getTarget());
-            gen.writeArrayFieldStart("args");
-            for (Expr e: value.getArgs()) {
-                gen.writeObject(e);
-            }
-            gen.writeEndArray();
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("Expr::Call",
+            List.of(getTarget().getTree(),
+            new TagTree("args",
+            getArgs().stream().map(Expr::getTree).toList())));
     }
 
 }

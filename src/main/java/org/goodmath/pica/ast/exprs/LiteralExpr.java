@@ -14,15 +14,11 @@
  */
 package org.goodmath.pica.ast.exprs;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
-import java.io.IOException;
+import java.util.List;
 
-@JsonSerialize(using = LiteralExpr.LiteralExprSerializer.class)
 public class LiteralExpr extends Expr {
     public enum Kind {
         STRLIT, INTLIT, FLOATLIT, CHARLIT, SYMLIT
@@ -45,16 +41,10 @@ public class LiteralExpr extends Expr {
         this.value = value;
     }
 
-    public static class LiteralExprSerializer extends JsonSerializer<LiteralExpr> {
-
-        @Override
-        public void serialize(LiteralExpr value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "LitExpr");
-            gen.writeStringField("valueKind", value.getKind().toString());
-            gen.writeStringField("value", value.getValue());
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+            return new TagTree("Expr::Literal::" + getKind().toString(),
+                    List.of(new TagTree(getValue())));
     }
 
 }

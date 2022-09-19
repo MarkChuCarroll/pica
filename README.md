@@ -1,5 +1,7 @@
 # Pica
 
+![Logo](docs/pica.jpg)
+
 At long last, Pica is my attempt to build
 a language loosely based on Pi calculus.
 

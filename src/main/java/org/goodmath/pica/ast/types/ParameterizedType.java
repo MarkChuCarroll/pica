@@ -14,16 +14,11 @@
  */
 package org.goodmath.pica.ast.types;
 
-import java.io.IOException;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
-@JsonSerialize(using = ParameterizedType.ParameterizedTypeSerializer.class)
 public class ParameterizedType extends Type {
     private final NamedType base;
     private final List<Type> params;
@@ -42,19 +37,12 @@ public class ParameterizedType extends Type {
         return params;
     }
 
-    public static class ParameterizedTypeSerializer extends JsonSerializer<ParameterizedType> {
-
-        @Override
-        public void serialize(ParameterizedType value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "ParameterizedType");
-            gen.writeArrayFieldStart("typeParams");
-            for (Type t: value.getParams()) {
-                gen.writeObject(t);
-            }
-            gen.writeEndArray();
-            gen.writeObjectField("baseType", value.getBase());
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("Type::Parameterized",
+            List.of(
+                new TagTree("typeParams",
+                    getParams().stream().map(Type::getTree).toList()),
+                getBase().getTree()));
     }
 }

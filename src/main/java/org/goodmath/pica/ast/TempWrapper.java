@@ -15,6 +15,7 @@
 package org.goodmath.pica.ast;
 
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
 public class TempWrapper<T> extends AstNode {
     public TempWrapper(T wrapped) {
@@ -23,4 +24,9 @@ public class TempWrapper<T> extends AstNode {
     }
 
     public T value;
+
+    @Override
+    public TagTree getTree() {
+        return new TagTree("INVALID");
+    }
 }

@@ -14,18 +14,13 @@
  */
 package org.goodmath.pica.ast.types;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
-import lombok.Getter;
 
-import java.io.IOException;
+import java.util.List;
 
-@JsonSerialize(using = NamedType.NamedTypeSerializer.class)
 public class NamedType extends Type {
     private final Identifier id;
     public NamedType(Identifier id, Location loc) {
@@ -38,15 +33,10 @@ public class NamedType extends Type {
     }
 
 
-    public static class NamedTypeSerializer extends JsonSerializer<NamedType> {
-
-        @Override
-        public void serialize(NamedType value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "NamedType");
-            gen.writeStringField("name", value.getId().toString());
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("Type::Named",
+            List.of(getId().getTree()));
     }
 
 }

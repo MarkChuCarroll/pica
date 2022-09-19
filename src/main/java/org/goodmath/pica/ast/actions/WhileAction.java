@@ -14,16 +14,12 @@
  */
 package org.goodmath.pica.ast.actions;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.exprs.Expr;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
-import java.io.IOException;
+import java.util.List;
 
-@JsonSerialize(using = WhileAction.WhileActionSerializer.class)
 public class WhileAction extends Action {
     private final Expr cond;
     public Expr getCond() {
@@ -42,16 +38,10 @@ public class WhileAction extends Action {
         this.body = body;
     }
 
-    public static class WhileActionSerializer extends JsonSerializer<WhileAction> {
-
-        @Override
-        public void serialize(WhileAction value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "WhileAction");
-            gen.writeObjectField("cond", value.getCond());
-            gen.writeObjectField("body", value.getBody());
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("Action::While",
+            List.of(getCond().getTree(), getBody().getTree()));
     }
 
 }

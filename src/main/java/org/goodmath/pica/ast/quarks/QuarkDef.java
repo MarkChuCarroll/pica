@@ -14,14 +14,10 @@
  */
 package org.goodmath.pica.ast.quarks;
 
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.Definition;
 import org.goodmath.pica.ast.TypeParamSpec;
 import org.goodmath.pica.ast.TypedParameter;
@@ -29,10 +25,9 @@ import org.goodmath.pica.ast.actions.Action;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
 import org.goodmath.pica.types.Defined;
+import org.goodmath.pica.util.TagTree;
 
-import lombok.Getter;
 
-@JsonSerialize(using = QuarkDef.QuarkSerializer.class)
 public class QuarkDef extends Definition {
     private final List<TypedParameter> params;
     private final List<Type> composes;
@@ -76,42 +71,27 @@ public class QuarkDef extends Definition {
         return action;
     }
 
-    public static class QuarkSerializer extends JsonSerializer<QuarkDef> {
-
-        @Override
-        public void serialize(QuarkDef value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "quarkDef");
-            gen.writeStringField("name", value.getName());
-            if (value.getTypeParams().isPresent()) {
-                gen.writeArrayFieldStart("typeParams");
-                for (TypeParamSpec tp : value.getTypeParams().get()) {
-                    gen.writeObject(tp);
-                }
-                gen.writeEndArray();
-            }
-            gen.writeArrayFieldStart("composes");
-            for (Type t: value.getComposes()) {
-                gen.writeObject(t);
-            }
-            gen.writeEndArray();
-            gen.writeArrayFieldStart("channels");
-            for (ChannelDef c: value.getChannels()) {
-                gen.writeObject(c);
-            }
-            gen.writeEndArray();
-            gen.writeArrayFieldStart("params");
-            for (TypedParameter tp: value.getParams()) {
-                gen.writeObject(tp);
-            }
-            gen.writeEndArray();
-            gen.writeObjectField("action", value.getAction());
-            gen.writeEndObject();
-        }
-    }
 
     @Override
     public List<Defined> getDefinedNames() {
         return List.of(Defined.quarkDefinition(getName(), this));
+    }
+
+    @Override
+    public TagTree getTree() {
+        List<TagTree> children = new ArrayList<>();
+        getTypeParams().ifPresent(tps -> {
+            children.add(new TagTree("typeParams",
+                tps.stream().map(TypeParamSpec::getTree).toList()));
+        });
+        children.add(new TagTree("params",
+            getParams().stream().map(TypedParameter::getTree).toList()));
+        children.add(new TagTree("channels",
+            channels.stream().map(ChannelDef::getTree).toList()));
+        children.add(new TagTree("slots",
+            getSlots().stream().map(SlotDef::getTree).toList()));
+        children.add(action.getTree());
+        return new TagTree("Def::Quark",
+            children);
     }
 }

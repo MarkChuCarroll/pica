@@ -14,15 +14,11 @@
  */
 package org.goodmath.pica.ast.types;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
-import java.io.IOException;
+import java.util.List;
 
-@JsonSerialize(using = ChannelType.ChannelTypeSerializer.class)
 public class ChannelType extends Type {
     private final Type bosonType;
 
@@ -35,14 +31,9 @@ public class ChannelType extends Type {
         return bosonType;
     }
 
-    public static class ChannelTypeSerializer extends JsonSerializer<ChannelType> {
-
-        @Override
-        public void serialize(ChannelType value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "ChannelType");
-            gen.writeObjectField("type", value.getBosonType());
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("Type:Channel",
+            List.of(getBosonType().getTree()));
     }
 }

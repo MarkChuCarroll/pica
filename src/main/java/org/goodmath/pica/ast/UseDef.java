@@ -22,11 +22,10 @@ import java.util.Optional;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.types.Defined;
+import org.goodmath.pica.util.TagTree;
 
-@JsonSerialize(using = UseDef.UseSerializer.class)
 public class UseDef extends AstNode {
     private final Identifier id;
     private final List<String> names;
@@ -76,6 +75,18 @@ public class UseDef extends AstNode {
             }
             gen.writeEndObject();
         }
+    }
+
+
+    @Override
+    public TagTree getTree() {
+        List<TagTree> children = new ArrayList<>();
+        children.add(getId().getTree());
+        if (!getNames().isEmpty()) {
+            children.add(new TagTree("names",
+                getNames().stream().map(n -> new TagTree(n)).toList()));
+        }
+        return new TagTree("Def::Use", children);
     }
 
 }

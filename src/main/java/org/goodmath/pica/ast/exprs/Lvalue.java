@@ -14,18 +14,14 @@
  */
 package org.goodmath.pica.ast.exprs;
 
-import java.io.IOException;
+import java.util.List;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
 public abstract class Lvalue extends Expr {
 
-    @JsonSerialize(using = IndexedLValue.IndexedLvalueSerializer.class)
     public static class IndexedLValue extends Lvalue {
         private final Lvalue context;
         private final String index;
@@ -44,20 +40,13 @@ public abstract class Lvalue extends Expr {
             return index;
         }
 
-        public static class IndexedLvalueSerializer extends JsonSerializer<IndexedLValue> {
-
-            @Override
-            public void serialize(IndexedLValue value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-                gen.writeStartObject();
-                gen.writeStringField("kind", "IndexedLvalue");
-                gen.writeObjectField("context", value.getContext());
-                gen.writeStringField("index", value.getIndex());
-                gen.writeEndObject();
-            }
+        @Override
+        public TagTree getTree() {
+            return new TagTree("LValue::Indexed",
+                List.of(getContext().getTree(), new TagTree(getIndex())));
         }
     }
 
-    @JsonSerialize(using = IdentifierLvalue.IdentifierLvalueSerializer.class)
     public static class IdentifierLvalue extends Lvalue {
         private final Identifier id;
 
@@ -68,15 +57,10 @@ public abstract class Lvalue extends Expr {
             this.id = id;
         }
 
-        public static class IdentifierLvalueSerializer extends JsonSerializer<IdentifierLvalue> {
-
-            @Override
-            public void serialize(IdentifierLvalue value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-                gen.writeStartObject();
-                gen.writeStringField("kind", "IdentifierLvalue");
-                gen.writeStringField("ident", value.getId().toString());
-                gen.writeEndObject();
-            }
+        @Override
+        public TagTree getTree() {
+            return new TagTree("Lvalue::Identifier",
+                List.of(getId().getTree()));
         }
     }
 

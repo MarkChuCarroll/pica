@@ -14,19 +14,14 @@
  */
 package org.goodmath.pica.ast.bosons;
 
-import java.io.IOException;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
+import org.goodmath.pica.util.TagTree;
 
-@JsonSerialize(using = BosonTupleOption.BosonTupleOptionSerializer.class)
 public class BosonTupleOption extends BosonOption {
-    private final List<Type> fields;
+        private final List<Type> fields;
 
     public List<Type> getFields() {
         return fields;
@@ -37,20 +32,13 @@ public class BosonTupleOption extends BosonOption {
         this.fields = fields;
     }
 
-    public static class BosonTupleOptionSerializer extends JsonSerializer<BosonTupleOption> {
-
-        @Override
-        public void serialize(BosonTupleOption value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "BosonTuple");
-            gen.writeStringField("name", value.getName());
-            gen.writeArrayFieldStart("fields");
-            for (Type e: value.getFields()) {
-                gen.writeObject(e);
-            }
-            gen.writeEndArray();
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("BosonOption::Tuple",
+            List.of(
+                new TagTree(getName()),
+                new TagTree("fields",
+                    getFields().stream().map(Type::getTree).toList())));
     }
 
 }

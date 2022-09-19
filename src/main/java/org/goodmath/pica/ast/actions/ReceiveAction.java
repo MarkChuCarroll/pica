@@ -16,6 +16,7 @@ package org.goodmath.pica.ast.actions;
 
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.quarks.BosonMessagePatternAction;
+import org.goodmath.pica.util.TagTree;
 
 import java.util.List;
 
@@ -35,5 +36,15 @@ public class ReceiveAction extends Action {
 
     public List<BosonMessagePatternAction> getPatternActions() {
         return patternActions;
+    }
+
+    @Override
+    public TagTree getTree() {
+        return new TagTree("Action::Receive",
+            List.of(new TagTree(getChannel()),
+            new TagTree("patternActions",
+                getPatternActions().stream().map(BosonMessagePatternAction::getTree).toList()
+            )
+        ));
     }
 }

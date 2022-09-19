@@ -14,16 +14,11 @@
  */
 package org.goodmath.pica.ast.actions;
 
-import java.io.IOException;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
-@JsonSerialize(using = SequenceAction.SequenceActionSerializer.class)
 public class SequenceAction extends Action {
     private final List<Action> actions;
 
@@ -36,19 +31,10 @@ public class SequenceAction extends Action {
         this.actions = actions;
     }
 
-    public static class SequenceActionSerializer extends JsonSerializer<SequenceAction> {
-
-        @Override
-        public void serialize(SequenceAction value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "SequenceAction");
-            gen.writeArrayFieldStart("actions");
-            for (Action a: value.getActions()) {
-                gen.writeObject(a);
-            }
-            gen.writeEndArray();
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("Action::Sequence",
+            getActions().stream().map(Action::getTree).toList());
     }
 
 }

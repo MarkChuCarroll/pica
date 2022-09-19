@@ -14,16 +14,12 @@
  */
 package org.goodmath.pica.ast.actions;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.exprs.Expr;
 import org.goodmath.pica.ast.locations.Location;
+import org.goodmath.pica.util.TagTree;
 
-import java.io.IOException;
+import java.util.List;
 
-@JsonSerialize(using = IfAction.IfActionSerializer.class)
 public class IfAction extends Action {
     private final Expr cond;
     public Expr getCond() {
@@ -48,17 +44,10 @@ public class IfAction extends Action {
         this.f = f;
     }
 
-    public static class IfActionSerializer extends JsonSerializer<IfAction> {
-
-        @Override
-        public void serialize(IfAction value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "IfAction");
-            gen.writeObjectField("condition", value.getCond());
-            gen.writeObjectField("trueBranch", value.getT());
-            gen.writeObjectField("falseBranch", value.getF());
-            gen.writeEndObject();
-        }
+    @Override
+    public TagTree getTree() {
+        return new TagTree("Action::If",
+            List.of(getCond().getTree(), getT().getTree(), getF().getTree()));
     }
 
 }
