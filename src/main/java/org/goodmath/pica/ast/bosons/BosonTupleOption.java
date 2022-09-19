@@ -14,12 +14,17 @@
  */
 package org.goodmath.pica.ast.bosons;
 
+import java.io.IOException;
 import java.util.List;
 
-import org.goodmath.pica.ast.Identifier;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
 
+@JsonSerialize(using = BosonTupleOption.BosonTupleOptionSerializer.class)
 public class BosonTupleOption extends BosonOption {
     private final List<Type> fields;
 
@@ -27,9 +32,25 @@ public class BosonTupleOption extends BosonOption {
         return fields;
     }
 
-    public BosonTupleOption(Identifier name, List<Type> fields, Location loc) {
+    public BosonTupleOption(String name, List<Type> fields, Location loc) {
         super(name, loc);
         this.fields = fields;
+    }
+
+    public static class BosonTupleOptionSerializer extends JsonSerializer<BosonTupleOption> {
+
+        @Override
+        public void serialize(BosonTupleOption value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "BosonTuple");
+            gen.writeStringField("name", value.getName());
+            gen.writeArrayFieldStart("fields");
+            for (Type e: value.getFields()) {
+                gen.writeObject(e);
+            }
+            gen.writeEndArray();
+            gen.writeEndObject();
+        }
     }
 
 }

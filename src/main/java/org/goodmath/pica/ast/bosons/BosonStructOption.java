@@ -14,12 +14,17 @@
  */
 package org.goodmath.pica.ast.bosons;
 
+import java.io.IOException;
 import java.util.Map;
 
-import org.goodmath.pica.ast.Identifier;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
 
+@JsonSerialize(using = BosonStructOption.BosonStructOptionSerializer.class)
 public class BosonStructOption extends BosonOption {
     private final Map<String, Type> fields;
 
@@ -27,11 +32,28 @@ public class BosonStructOption extends BosonOption {
         return fields;
     }
 
-    public BosonStructOption(Identifier name, Map<String, Type> fields, Location loc) {
+    public BosonStructOption(String name, Map<String, Type> fields, Location loc) {
         super(name, loc);
         this.fields = fields;
     }
 
+    public static class BosonStructOptionSerializer extends JsonSerializer<BosonStructOption> {
 
+        @Override
+        public void serialize(BosonStructOption value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "BosonStruct");
+            gen.writeStringField("name", value.getName());
+            gen.writeArrayFieldStart("fields");
+            for (Map.Entry<String, Type> e: value.getFields().entrySet()) {
+                gen.writeStartObject();
+                gen.writeStringField("name", e.getKey());
+                gen.writeObjectField("value", e.getValue());
+                gen.writeEndObject();
+            }
+            gen.writeEndArray();
+            gen.writeEndObject();
+        }
+    }
 
 }

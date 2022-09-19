@@ -15,15 +15,15 @@ package org.goodmath.pica.ast.actions;
  */
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.ast.quarks.PatternAction;
+import org.goodmath.pica.ast.quarks.BosonMessagePatternAction;
 
 import java.util.List;
 
 public class ReceiveAction extends Action {
     private final String channel;
-    private final List<PatternAction> patternActions;
+    private final List<BosonMessagePatternAction> patternActions;
 
-    public ReceiveAction(String channel, List<PatternAction> actions, Location loc) {
+    public ReceiveAction(String channel, List<BosonMessagePatternAction> actions, Location loc) {
         super(loc);
         this.channel = channel;
         this.patternActions = actions;
@@ -33,7 +33,7 @@ public class ReceiveAction extends Action {
         return channel;
     }
 
-    public List<PatternAction> getPatternActions() {
+    public List<BosonMessagePatternAction> getPatternActions() {
         return patternActions;
     }
 }

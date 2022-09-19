@@ -14,10 +14,16 @@
  */
 package org.goodmath.pica.ast.exprs;
 
+import java.io.IOException;
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
 
+@JsonSerialize(using = ListExpr.ListExprSerializer.class)
 public class ListExpr extends Expr {
     private final List<Expr> values;
 
@@ -28,6 +34,21 @@ public class ListExpr extends Expr {
     public ListExpr(List<Expr> values, Location loc) {
         super(loc);
         this.values = values;
+    }
+
+    public static class ListExprSerializer extends JsonSerializer<ListExpr> {
+
+        @Override
+        public void serialize(ListExpr value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "ListExpr");
+            gen.writeArrayFieldStart("values");
+            for (Expr e: value.getValues()) {
+                gen.writeObject(e);
+            }
+            gen.writeEndArray();
+            gen.writeEndObject();
+        }
     }
 
 }

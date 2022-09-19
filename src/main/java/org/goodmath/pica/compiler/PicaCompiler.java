@@ -1,15 +1,12 @@
 package org.goodmath.pica.compiler;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Optional;
 
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.goodmath.pica.ast.locations.SourceFileLocation;
@@ -26,13 +23,13 @@ import org.goodmath.pica.types.Scope;
 
 class PicaCompiler {
 
-    private List<File> modulePath;
+    private final List<File> modulePath;
 
     public PicaCompiler(final List<File> modulePath) {
         this.modulePath = modulePath;
     }
 
-    private ArrayDeque<Identifier> compileQueue = new ArrayDeque<Identifier>();
+    private final ArrayDeque<Identifier> compileQueue = new ArrayDeque<Identifier>();
 
     public File identifierToFile(Identifier id) {
         for (File dir: modulePath) {
@@ -60,9 +57,9 @@ class PicaCompiler {
         }
         // create a CharStream that reads from standard input
         // create a CharStream that reads from standard input
-        ANTLRInputStream input;
+        CharStream input;
         try {
-            input = new ANTLRInputStream(new FileReader(sourceFile));
+            input = CharStreams.fromFileName(sourceFile.getPath());
         } catch (IOException e) {
             throw new PicaCompilationException(String.format("File %s not found", sourceFile));
         }

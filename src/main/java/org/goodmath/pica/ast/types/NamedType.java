@@ -14,19 +14,39 @@
  */
 package org.goodmath.pica.ast.types;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.locations.Location;
 
 import lombok.Getter;
 
-@Getter
-public class NamedType extends Type {
-    private Identifier id;
+import java.io.IOException;
 
+@JsonSerialize(using = NamedType.NamedTypeSerializer.class)
+public class NamedType extends Type {
+    private final Identifier id;
     public NamedType(Identifier id, Location loc) {
         super(loc);
         this.id = id;
     }
 
+    public Identifier getId() {
+        return id;
+    }
+
+
+    public static class NamedTypeSerializer extends JsonSerializer<NamedType> {
+
+        @Override
+        public void serialize(NamedType value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "NamedType");
+            gen.writeStringField("name", value.getId().toString());
+            gen.writeEndObject();
+        }
+    }
 
 }

@@ -14,10 +14,12 @@
  */
 package org.goodmath.pica.ast;
 
+import lombok.EqualsAndHashCode;
 import org.goodmath.pica.ast.locations.Location;
 
 import java.util.Optional;
 
+@EqualsAndHashCode(callSuper = false)
 public class Identifier extends AstNode {
     private final Optional<Identifier> moduleId;
     private final String name;
@@ -34,6 +36,15 @@ public class Identifier extends AstNode {
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String toString() {
+        if (getModule().isPresent()) {
+            return getModule().get().toString() + "::" + getName();
+        } else {
+            return getName();
+        }
     }
 
 

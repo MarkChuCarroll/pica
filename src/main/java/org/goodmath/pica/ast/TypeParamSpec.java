@@ -14,13 +14,17 @@
  */
 package org.goodmath.pica.ast;
 
+import java.io.IOException;
 import java.util.Optional;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
 
-import lombok.Getter;
-
+@JsonSerialize(using = TypeParamSpec.TypeParamSpecSerializer.class)
 public class TypeParamSpec extends AstNode {
     private final String name;
     private final Optional<Type> constraint;
@@ -37,5 +41,19 @@ public class TypeParamSpec extends AstNode {
 
     public Optional<Type> getConstraint() {
         return constraint;
+    }
+
+    public static class TypeParamSpecSerializer extends JsonSerializer<TypeParamSpec> {
+
+        @Override
+        public void serialize(TypeParamSpec value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "TypeParam");
+            gen.writeStringField("name", value.getName());
+            if (value.getConstraint().isPresent()) {
+                gen.writeObjectField("constraint", value.getConstraint().get());
+            }
+            gen.writeEndObject();
+        }
     }
 }

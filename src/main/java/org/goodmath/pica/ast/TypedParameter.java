@@ -14,10 +14,16 @@
  */
 package org.goodmath.pica.ast;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
 
-import lombok.Getter;
+import java.io.IOException;
+
+@JsonSerialize(using = TypedParameter.TypedParameterSerializer.class)
 public class TypedParameter extends AstNode {
     private final String name;
     private final Type type;
@@ -34,5 +40,17 @@ public class TypedParameter extends AstNode {
 
     public Type getType() {
         return type;
+    }
+
+    public static class TypedParameterSerializer extends JsonSerializer<TypedParameter> {
+
+        @Override
+        public void serialize(TypedParameter value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "TypedParameter");
+            gen.writeStringField("name", value.getName());
+            gen.writeObjectField("type", value.getType());
+            gen.writeEndObject();
+        }
     }
 }

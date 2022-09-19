@@ -137,7 +137,7 @@ public class AstBuilder implements PicaGrammarListener {
     @Override
     public void exitModule(ModuleContext ctx) {
         var defs = ctx.definition().stream().map(d -> (Definition)getAstNodeFor(d)).toList();
-        var uses = ctx.useDef().stream().map(u -> (Use)getAstNodeFor(u)).toList();
+        var uses = ctx.useDef().stream().map(u -> (UseDef)getAstNodeFor(u)).toList();
         theModule = new PicaModule(moduleFile, uses, defs, Location.Unlocated);
     }
 
@@ -149,7 +149,7 @@ public class AstBuilder implements PicaGrammarListener {
     public void exitUseDef(UseDefContext ctx) {
         var usedModule =  (Identifier)getAstNodeFor(ctx.ident());
         var usedNames = ctx.ID().stream().map(ParseTree::getText).toList();
-        setAstNodeFor(ctx, new Use(usedModule, usedNames, loc(ctx)));
+        setAstNodeFor(ctx, new UseDef(usedModule, usedNames, loc(ctx)));
     }
 
     @Override
@@ -217,9 +217,9 @@ public class AstBuilder implements PicaGrammarListener {
 
     @Override
     public void exitOnClause(PicaGrammarParser.OnClauseContext ctx) {
-        var pattern = (Pattern)getAstNodeFor(ctx.pattern());
+        var pattern = (BosonPattern)getAstNodeFor(ctx.pattern());
         var action = (Action)getAstNodeFor(ctx.action());
-        setAstNodeFor(ctx, new PatternAction(pattern, action, loc(ctx)));
+        setAstNodeFor(ctx, new BosonMessagePatternAction(pattern, action, loc(ctx)));
     }
 
     @Override
@@ -231,10 +231,10 @@ public class AstBuilder implements PicaGrammarListener {
         var id = ctx.ID().getText();
         if (ctx.tuplePattern() != null) {
             var tupleFields = ((TempWrapper<List<String>>)getAstNodeFor(ctx.tuplePattern())).value;
-            setAstNodeFor(ctx, new TuplePattern(id, tupleFields, loc(ctx)));
+            setAstNodeFor(ctx, new BosonTuplePattern(id, tupleFields, loc(ctx)));
         } else if (ctx.structPattern() != null ){
             var tupleFields = ((TempWrapper<Map<String, String>>)getAstNodeFor(ctx.structPattern())).value;
-            setAstNodeFor(ctx, new StructPattern(id, tupleFields, loc(ctx)));
+            setAstNodeFor(ctx, new BosonStructPattern(id, tupleFields, loc(ctx)));
         } else {
             throw new RuntimeException("Invalid pattern: neither struct nor tuple");
         }
@@ -421,8 +421,7 @@ public class AstBuilder implements PicaGrammarListener {
     @Override
     public void exitBosonBody(BosonBodyContext ctx) {
         var options = ctx.bosonOption().stream().map(bo ->
-                (BosonOption)getAstNodeFor(bo));
-        setAstNodeFor(ctx, new TempWrapper<>(options));
+                (BosonOption)getAstNodeFor(bo)).toList();        setAstNodeFor(ctx, new TempWrapper<>(options));
     }
 
     @Override
@@ -431,9 +430,9 @@ public class AstBuilder implements PicaGrammarListener {
 
     @Override
     public void exitTupleBosonOption(PicaGrammarParser.TupleBosonOptionContext ctx) {
-        var id = (Identifier)getAstNodeFor(ctx.ident());
+        var name = ctx.ID().getText();
         var fields = ((TempWrapper<List<Type>>)getAstNodeFor(ctx.typeList())).value;
-        setAstNodeFor(ctx, new BosonTupleOption(id, fields, loc(ctx)));
+        setAstNodeFor(ctx, new BosonTupleOption(name, fields, loc(ctx)));
     }
 
     @Override
@@ -442,9 +441,9 @@ public class AstBuilder implements PicaGrammarListener {
 
     @Override
     public void exitStructBosonOption(PicaGrammarParser.StructBosonOptionContext ctx) {
-        var id = (Identifier)getAstNodeFor(ctx.ident());
+        var name = ctx.ID().getText();
         var fields = ((TempWrapper<Map<String, Type>>)getAstNodeFor(ctx.typedIdList())).value;
-        setAstNodeFor(ctx, new BosonStructOption(id, fields, loc(ctx)));
+        setAstNodeFor(ctx, new BosonStructOption(name, fields, loc(ctx)));
     }
 
 
@@ -480,7 +479,7 @@ public class AstBuilder implements PicaGrammarListener {
     @Override
     public void exitReceiveAction(PicaGrammarParser.ReceiveActionContext ctx) {
         var channelName = ctx.ID().getText();
-        var handlers = ctx.onClause().stream().map(o -> (PatternAction)getAstNodeFor(o)).toList();
+        var handlers = ctx.onClause().stream().map(o -> (BosonMessagePatternAction)getAstNodeFor(o)).toList();
         setAstNodeFor(ctx, new ReceiveAction(channelName, handlers, loc(ctx)));
     }
 
@@ -492,7 +491,7 @@ public class AstBuilder implements PicaGrammarListener {
     public void exitAssignAction(AssignActionContext ctx) {
         var lval = (Lvalue)getAstNodeFor(ctx.lvalue());
         var expr = (Expr)getAstNodeFor(ctx.expr());
-        setAstNodeFor(ctx, new Assignment(lval, expr, loc(ctx)));
+        setAstNodeFor(ctx, new AssignmentAction(lval, expr, loc(ctx)));
     }
 
     @Override

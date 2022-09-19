@@ -14,31 +14,58 @@
  */
 package org.goodmath.pica.ast;
 
+import java.io.IOException;
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
 
+@JsonSerialize(using = PicaModule.PicaModuleSerializer.class)
 public class PicaModule extends AstNode {
-    public PicaModule(String name, List<Use> uses, List<Definition> defs, Location loc) {
+    public PicaModule(String name, List<UseDef> useDefs, List<Definition> defs, Location loc) {
         super(loc);
         this.name = name;
-        this.uses = uses;
+        this.useDefs = useDefs;
         this.definitions = defs;
     }
 
     private final String name;
-    private final List<Use> uses;
+    private final List<UseDef> useDefs;
     private final List<Definition> definitions;
 
     public String getName() {
         return name;
     }
 
-    public List<Use> getUses() {
-        return uses;
+    public List<UseDef> getUses() {
+        return useDefs;
     }
 
     public List<Definition> getDefinitions() {
         return definitions;
+    }
+
+    public static class PicaModuleSerializer extends JsonSerializer<PicaModule> {
+
+        @Override
+        public void serialize(PicaModule value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "Module");
+            gen.writeStringField("name", value.getName());
+            gen.writeArrayFieldStart("uses");
+            for (UseDef u: value.getUses()) {
+                gen.writeObject(u);
+            }
+            gen.writeEndArray();
+            gen.writeArrayFieldStart("defs");
+            for (Definition d: value.getDefinitions()) {
+                gen.writeObject(d);
+            }
+            gen.writeEndArray();
+            gen.writeEndObject();
+        }
     }
 }

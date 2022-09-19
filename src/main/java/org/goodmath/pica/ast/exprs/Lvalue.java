@@ -14,13 +14,18 @@
  */
 package org.goodmath.pica.ast.exprs;
 
-import java.util.Optional;
+import java.io.IOException;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.locations.Location;
 
-public class Lvalue extends Expr {
+public abstract class Lvalue extends Expr {
 
+    @JsonSerialize(using = IndexedLValue.IndexedLvalueSerializer.class)
     public static class IndexedLValue extends Lvalue {
         private final Lvalue context;
         private final String index;
@@ -38,8 +43,21 @@ public class Lvalue extends Expr {
         public String getIndex() {
             return index;
         }
+
+        public static class IndexedLvalueSerializer extends JsonSerializer<IndexedLValue> {
+
+            @Override
+            public void serialize(IndexedLValue value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+                gen.writeStartObject();
+                gen.writeStringField("kind", "IndexedLvalue");
+                gen.writeObjectField("context", value.getContext());
+                gen.writeStringField("index", value.getIndex());
+                gen.writeEndObject();
+            }
+        }
     }
 
+    @JsonSerialize(using = IdentifierLvalue.IdentifierLvalueSerializer.class)
     public static class IdentifierLvalue extends Lvalue {
         private final Identifier id;
 
@@ -49,10 +67,23 @@ public class Lvalue extends Expr {
             super(loc);
             this.id = id;
         }
+
+        public static class IdentifierLvalueSerializer extends JsonSerializer<IdentifierLvalue> {
+
+            @Override
+            public void serialize(IdentifierLvalue value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+                gen.writeStartObject();
+                gen.writeStringField("kind", "IdentifierLvalue");
+                gen.writeStringField("ident", value.getId().toString());
+                gen.writeEndObject();
+            }
+        }
     }
 
     public Lvalue(Location loc) {
         super(loc);
     }
+
+
 
 }

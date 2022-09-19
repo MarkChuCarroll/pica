@@ -15,17 +15,16 @@
 package org.goodmath.pica.ast.bosons;
 
 import org.goodmath.pica.ast.AstNode;
-import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.locations.Location;
 
 public class BosonOption extends AstNode {
-    private final Identifier name;
+    private final String name;
 
-    public Identifier getName() {
+    public String getName() {
         return name;
     }
 
-    public BosonOption(Identifier name, Location loc) {
+    public BosonOption(String name, Location loc) {
         super(loc);
         this.name = name;
     }

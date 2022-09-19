@@ -14,8 +14,15 @@
  */
 package org.goodmath.pica.ast.actions;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.exprs.Expr;
 
+import java.io.IOException;
+
+@JsonSerialize(using = ExprAction.ExprActionSerializer.class)
 public class ExprAction extends Action {
     private final Expr expr;
 
@@ -26,6 +33,17 @@ public class ExprAction extends Action {
     public ExprAction(Expr expr) {
         super(expr.getLocation());
         this.expr = expr;
+    }
+
+    public static class ExprActionSerializer extends JsonSerializer<ExprAction> {
+
+        @Override
+        public void serialize(ExprAction value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "ExprAction");
+            gen.writeObjectField("expr", value.getExpr());
+            gen.writeEndObject();
+        }
     }
 
 }

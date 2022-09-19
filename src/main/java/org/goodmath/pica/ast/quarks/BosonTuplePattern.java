@@ -12,53 +12,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.goodmath.pica.ast.actions;
+package org.goodmath.pica.ast.quarks;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.goodmath.pica.ast.exprs.Expr;
 import org.goodmath.pica.ast.locations.Location;
 
 import java.io.IOException;
+import java.util.List;
 
-@JsonSerialize(using = IfAction.IfActionSerializer.class)
-public class IfAction extends Action {
-    private final Expr cond;
-    public Expr getCond() {
-        return cond;
+@JsonSerialize(using = BosonStructPattern.BosonStructPatternSerializer.class)
+public class BosonTuplePattern extends BosonPattern {
+
+    private final List<String> bosonFields;
+
+    public BosonTuplePattern(String bosonName, List<String> bosonFields, Location loc) {
+        super(bosonName, loc);
+        this.bosonFields = bosonFields;
     }
 
-    private final Action t;
-    public Action getT() {
-        return t;
+    public List<String> getBosonFields() {
+        return bosonFields;
     }
 
-    private final Action f;
-
-    public Action getF() {
-        return f;
-    }
-
-    public IfAction(Expr cond, Action t, Action f, Location loc) {
-        super(loc);
-        this.cond = cond;
-        this.t = t;
-        this.f = f;
-    }
-
-    public static class IfActionSerializer extends JsonSerializer<IfAction> {
+    public static class BosonTuplePatternSerializer extends JsonSerializer<BosonTuplePattern> {
 
         @Override
-        public void serialize(IfAction value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        public void serialize(BosonTuplePattern value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
             gen.writeStartObject();
-            gen.writeStringField("kind", "IfAction");
-            gen.writeObjectField("condition", value.getCond());
-            gen.writeObjectField("trueBranch", value.getT());
-            gen.writeObjectField("falseBranch", value.getF());
+            gen.writeStringField("kind", "BosonTuplePattern");
+            gen.writeStringField("name", value.getBosonName());
+            gen.writeArrayFieldStart("fields");
+            for (String field: value.getBosonFields()) {
+                gen.writeString(field);
+            }
+            gen.writeEndArray();
             gen.writeEndObject();
         }
     }
-
 }

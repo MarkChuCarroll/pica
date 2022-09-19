@@ -40,6 +40,4 @@ public class SourceFileLocation extends Location {
     public String toString() {
         return String.format("%s (line %d, col %d)", filename, line, col);
     }
-
-
 }

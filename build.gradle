@@ -24,6 +24,19 @@ test {
     useJUnitPlatform()
 }
 
+sourceSets {
+    main {
+        java {
+            srcDirs 'src/main/java'
+            srcDirs files("${buildDir}/generated-src/java").builtBy(generateGrammarSource)
+        }
+    }
+    test {
+        java {
+            srcDirs 'src/test/java'
+        }
+    }
+}
 
 application {
     mainClass = "org.goodmath.pica.Main"

@@ -17,48 +17,41 @@ package org.goodmath.pica.ast.quarks;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.AstNode;
-import org.goodmath.pica.ast.exprs.Expr;
+import org.goodmath.pica.ast.actions.Action;
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.ast.types.Type;
 
 import java.io.IOException;
 
-@JsonSerialize(using= SlotDef.SlotDefSerializer.class)
-public class SlotDef extends AstNode {
-    private final String name;
-    private final Type type;
-    private final Expr initValue;
+public class BosonMessagePatternAction extends AstNode {
+    private final BosonPattern pattern;
+    private final Action action;
 
-    public SlotDef(String name, Type type, Expr initValue, Location loc) {
+    public BosonMessagePatternAction(BosonPattern pattern, Action action, Location loc) {
         super(loc);
-        this.name = name;
-        this.type = type;
-        this.initValue = initValue;
+        this.pattern = pattern;
+        this.action = action;
     }
 
-    public String getName() {
-        return name;
+    public BosonPattern getPattern() {
+        return pattern;
     }
 
-    public Type getType() {
-        return type;
+    public Action getAction() {
+        return action;
     }
 
-    public Expr getInitValue() {
-        return initValue;
-    }
-
-    public static class SlotDefSerializer extends JsonSerializer<SlotDef> {
+    public static class BosonMessagePatternActionSerializer extends JsonSerializer<BosonMessagePatternAction> {
 
         @Override
-        public void serialize(SlotDef value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        public void serialize(BosonMessagePatternAction value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
             gen.writeStartObject();
-            gen.writeStringField("kind", "SlotDef");
-            gen.writeStringField("name", value.name);
-            gen.writeObjectField("type", value.getType());
+            gen.writeStringField("kind", "BosonMessagePatternAction");
+            gen.writeObjectField("pattern", value.getPattern());
+            gen.writeObjectField("action", value.getAction());
             gen.writeEndObject();
         }
     }
 }
+
+

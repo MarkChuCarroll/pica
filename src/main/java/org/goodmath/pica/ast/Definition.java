@@ -14,6 +14,7 @@
  */
 package org.goodmath.pica.ast;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -42,5 +43,4 @@ public abstract class Definition extends AstNode {
     public List<Defined> getDefinedNames() {
         return Collections.emptyList();
     }
-
 }

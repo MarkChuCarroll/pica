@@ -14,7 +14,12 @@
  */
 package org.goodmath.pica.ast.exprs;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import org.goodmath.pica.ast.locations.Location;
+
+import java.io.IOException;
 
 public class UnaryExpr extends Expr {
     public enum Operator {
@@ -36,6 +41,18 @@ public class UnaryExpr extends Expr {
         super(loc);
         this.op = op;
         this.expr = expr;
+    }
+
+    public static class UnaryExprSerializer extends JsonSerializer<UnaryExpr> {
+
+        @Override
+        public void serialize(UnaryExpr value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "UnaryExpr");
+            gen.writeStringField("op", value.getOp().toString());
+            gen.writeObjectField("expr", value.getExpr());
+            gen.writeEndObject();
+        }
     }
 
 }

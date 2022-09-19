@@ -14,23 +14,22 @@
  */
 package org.goodmath.pica.ast.quarks;
 
-import java.util.List;
-
 import org.goodmath.pica.ast.AstNode;
 import org.goodmath.pica.ast.locations.Location;
 
 import lombok.Getter;
 
 @Getter
-public abstract class Pattern extends AstNode {
+public abstract class BosonPattern extends AstNode {
     private final String name;
 
     public String getBosonName() {
         return name;
     }
 
-    public Pattern(String name, Location loc) {
+    public BosonPattern(String name, Location loc) {
         super(loc);
         this.name = name;
     }
+
 }

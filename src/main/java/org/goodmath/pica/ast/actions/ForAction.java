@@ -14,9 +14,16 @@
  */
 package org.goodmath.pica.ast.actions;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.exprs.Expr;
 import org.goodmath.pica.ast.locations.Location;
 
+import java.io.IOException;
+
+@JsonSerialize(using = ForAction.ForActionSerializer.class)
 public class ForAction extends Action {
     private final String idx;
     public String getIdx() {
@@ -39,6 +46,18 @@ public class ForAction extends Action {
         this.idx = idx;
         this.range = range;
         this.body = body;
+    }
+
+    public static class ForActionSerializer extends JsonSerializer<ForAction> {
+        @Override
+        public void serialize(ForAction value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "ForAction");
+            gen.writeStringField("index", value.getIdx());
+            gen.writeObjectField("range", value.getRange());
+            gen.writeObjectField("action", value.getBody());
+            gen.writeEndObject();
+        }
     }
 
 }

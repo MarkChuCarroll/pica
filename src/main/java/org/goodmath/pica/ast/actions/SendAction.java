@@ -14,10 +14,17 @@
  */
 package org.goodmath.pica.ast.actions;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.exprs.Expr;
 import org.goodmath.pica.ast.locations.Location;
 
+import java.io.IOException;
+
+@JsonSerialize(using = SendAction.SendActionSerializer.class)
 public class SendAction extends Action {
     private final Identifier id;
     public Identifier getId() {
@@ -36,4 +43,15 @@ public class SendAction extends Action {
         this.value = value;
     }
 
+    public static class SendActionSerializer extends JsonSerializer<SendAction> {
+
+        @Override
+        public void serialize(SendAction value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "SendAction");
+            gen.writeStringField("id", value.getId().toString());
+            gen.writeObjectField("value", value.getValue());
+            gen.writeEndObject();
+        }
+    }
 }

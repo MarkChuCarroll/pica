@@ -14,12 +14,19 @@
  */
 package org.goodmath.pica.ast.actions;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.exprs.Expr;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
 
 import lombok.Getter;
 
+import java.io.IOException;
+
+@JsonSerialize(using = VarDefAction.VarDefActionSerializer.class)
 @Getter
 public class VarDefAction extends Action {
     private String name;
@@ -33,4 +40,16 @@ public class VarDefAction extends Action {
         this.value = value;
     }
 
+    public static class VarDefActionSerializer extends JsonSerializer<VarDefAction> {
+
+        @Override
+        public void serialize(VarDefAction value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "VarDefAction");
+            gen.writeStringField("name", value.getName());
+            gen.writeObjectField("type", value.getType());
+            gen.writeObjectField("initValue", value.getValue());
+            gen.writeEndObject();
+        }
+    }
 }

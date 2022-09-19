@@ -14,10 +14,17 @@
  */
 package org.goodmath.pica.ast.quarks;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.AstNode;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
 
+import java.io.IOException;
+
+@JsonSerialize(using = ChannelDef.ChannelDefSerializer.class)
 public class ChannelDef extends AstNode {
     private final String name;
 
@@ -35,6 +42,18 @@ public class ChannelDef extends AstNode {
         super(loc);
         this.name = name;
         this.type = type;
+    }
+
+    public static class ChannelDefSerializer extends JsonSerializer<ChannelDef> {
+
+        @Override
+        public void serialize(ChannelDef value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "channelDef");
+            gen.writeStringField("name", value.getName());
+            gen.writeObjectField("type", value.getType());
+            gen.writeEndObject();
+        }
     }
 
 }

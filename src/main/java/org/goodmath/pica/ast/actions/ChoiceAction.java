@@ -14,10 +14,16 @@
  */
 package org.goodmath.pica.ast.actions;
 
+import java.io.IOException;
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
 
+@JsonSerialize(using = ChoiceAction.ChoiceActionSerializer.class)
 public class ChoiceAction extends Action {
     private final List<Action> options;
 
@@ -28,6 +34,21 @@ public class ChoiceAction extends Action {
     public ChoiceAction(List<Action> options, Location loc) {
         super(loc);
         this.options = options;
+    }
+
+    public static class ChoiceActionSerializer extends JsonSerializer<ChoiceAction> {
+
+        @Override
+        public void serialize(ChoiceAction value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "ChoiceAction");
+            gen.writeArrayFieldStart("options");
+            for (Action a: value.getOptions()) {
+                gen.writeObject(a);
+            }
+            gen.writeEndArray();
+            gen.writeEndObject();
+        }
     }
 
 }

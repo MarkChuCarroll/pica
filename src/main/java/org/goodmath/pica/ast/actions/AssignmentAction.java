@@ -14,11 +14,18 @@
  */
 package org.goodmath.pica.ast.actions;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.exprs.Expr;
 import org.goodmath.pica.ast.exprs.Lvalue;
 import org.goodmath.pica.ast.locations.Location;
 
-public class Assignment extends Action {
+import java.io.IOException;
+
+@JsonSerialize(using = AssignmentAction.AssignmentActionSerializer.class)
+public class AssignmentAction extends Action {
     private final Lvalue target;
     public Lvalue getTarget() {
         return target;
@@ -30,11 +37,21 @@ public class Assignment extends Action {
         return value;
     }
 
-    public Assignment(Lvalue target, Expr value, Location loc) {
+    public AssignmentAction(Lvalue target, Expr value, Location loc) {
         super(loc);
         this.target = target;
         this.value = value;
+    }
 
+    public static class AssignmentActionSerializer extends JsonSerializer<AssignmentAction> {
+        @Override
+        public void serialize(AssignmentAction value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "AssignmentAction");
+            gen.writeObjectField("target", value.getTarget());
+            gen.writeObjectField("value", value.getValue());
+            gen.writeEndObject();
+        }
     }
 
 }

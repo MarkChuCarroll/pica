@@ -14,11 +14,17 @@
  */
 package org.goodmath.pica.ast.exprs;
 
+import java.io.IOException;
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.locations.Location;
 
+@JsonSerialize(using = BosonTupleExpr.BosonTupleExprSerializer.class)
 public class BosonTupleExpr extends Expr {
     private final Identifier tag;
     public Identifier getTag() {
@@ -37,4 +43,18 @@ public class BosonTupleExpr extends Expr {
         this.fields = fields;
     }
 
+    public static class BosonTupleExprSerializer extends JsonSerializer<BosonTupleExpr> {
+        @Override
+        public void serialize(BosonTupleExpr value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "BosonTupleExpr");
+            gen.writeStringField("bosonOptionName", value.getTag().toString());
+            gen.writeArrayFieldStart("fields");
+            for (Expr e : value.getFields()) {
+                gen.writeObject(e);
+            }
+            gen.writeEndArray();
+            gen.writeEndObject();
+        }
+    }
 }

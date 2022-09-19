@@ -14,10 +14,16 @@
  */
 package org.goodmath.pica.ast.exprs;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
 
+import java.io.IOException;
 import java.util.HashMap;
 
+@JsonSerialize(using = BinaryExpr.BinaryExprSerializer.class)
 public class BinaryExpr extends Expr {
     public enum Operator {
         And, Or, Eq, NotEq, Greater, GreaterEq, Less, LessEq, Plus, Minus,
@@ -72,6 +78,19 @@ public class BinaryExpr extends Expr {
         this.op = op;
         this.left = left;
         this.right = right;
+    }
+
+    public static class BinaryExprSerializer extends JsonSerializer<BinaryExpr> {
+
+        @Override
+        public void serialize(BinaryExpr value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("kind", "BinaryExpr");
+            gen.writeStringField("op", value.getOp().toString());
+            gen.writeObjectField("left", value.getLeft());
+            gen.writeObjectField("right", value.getRight());
+            gen.writeEndObject();
+        }
     }
 
 }

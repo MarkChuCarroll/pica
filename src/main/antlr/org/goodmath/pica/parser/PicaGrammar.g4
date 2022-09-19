@@ -107,8 +107,8 @@ bosonBody:
 ;
 
 bosonOption:
-   ident '(' typeList ')' # tupleBosonOption
-| ident '{' typedIdList  '}' # structBosonOption
+   ID '(' typeList ')' # tupleBosonOption
+| ID '{' typedIdList  '}' # structBosonOption
 
 ;
 
@@ -202,7 +202,6 @@ ident:
 ;
 
 ID : [a-zA-Z_]+ [-a-zA-Z0-9_]*
-   | [-+!@$%^&*/;?']+
 ;
 
 LIT_SYMBOL:

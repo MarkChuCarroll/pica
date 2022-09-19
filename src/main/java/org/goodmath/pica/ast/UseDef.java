@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.goodmath.pica.ast.actions;
+package org.goodmath.pica.ast;
 
 import java.io.IOException;
 import java.util.List;
@@ -23,31 +23,42 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.goodmath.pica.ast.locations.Location;
 
-@JsonSerialize(using = ParAction.ParActionSerializer.class)
-public class ParAction extends Action {
-    private final List<Action> actions;
+@JsonSerialize(using = UseDef.UseSerializer.class)
+public class UseDef extends AstNode {
+    private final Identifier id;
+    private final List<String> names;
 
-    public List<Action> getActions() {
-        return actions;
+
+    public List<String> getNames() {
+        return names;
     }
 
-    public ParAction(List<Action> actions, Location loc) {
+    public Identifier getId() {
+        return id;
+    }
+
+    public UseDef(Identifier id, List<String> names, Location loc) {
         super(loc);
-        this.actions = actions;
+        this.id = id;
+        this.names = names;
     }
 
-    public static class ParActionSerializer extends JsonSerializer<ParAction> {
+    public static class UseSerializer extends JsonSerializer<UseDef> {
 
         @Override
-        public void serialize(ParAction value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        public void serialize(UseDef value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
             gen.writeStartObject();
-            gen.writeStringField("kind", "ParAction");
-            gen.writeArrayFieldStart("actions");
-            for (Action a: value.getActions()) {
-                gen.writeObject(a);
+            gen.writeStringField("kind", "UseDef");
+            gen.writeStringField("module", value.getId().toString());
+            if (!value.getNames().isEmpty()) {
+                gen.writeArrayFieldStart("names");
+                for (String name : value.getNames()) {
+                    gen.writeString(name);
+                }
+                gen.writeEndArray();
             }
-            gen.writeEndArray();
             gen.writeEndObject();
         }
     }
+
 }

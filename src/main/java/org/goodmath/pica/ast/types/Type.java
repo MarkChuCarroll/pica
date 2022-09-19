@@ -21,5 +21,4 @@ public abstract class Type extends AstNode {
     public Type(Location loc) {
         super(loc);
     }
-
 }
