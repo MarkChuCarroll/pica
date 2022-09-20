@@ -65,6 +65,7 @@ import org.goodmath.pica.parser.PicaGrammarParser.ModuleContext;
 import org.goodmath.pica.parser.PicaGrammarParser.MultExprContext;
 import org.goodmath.pica.parser.PicaGrammarParser.NamedTypeContext;
 import org.goodmath.pica.parser.PicaGrammarParser.NegateExprContext;
+import org.goodmath.pica.parser.PicaGrammarParser.NewChanExprContext;
 import org.goodmath.pica.parser.PicaGrammarParser.ParActionContext;
 import org.goodmath.pica.parser.PicaGrammarParser.ParenActionContext;
 import org.goodmath.pica.parser.PicaGrammarParser.ParenExprContext;
@@ -895,6 +896,16 @@ public class AstBuilder implements PicaGrammarListener {
     @Override
     public void exitExitAction(PicaGrammarParser.ExitActionContext ctx) {
         setAstNodeFor(ctx, new ExitAction(loc(ctx)));
+
+    }
+
+    @Override
+    public void enterNewChanExpr(NewChanExprContext ctx) {
+    }
+
+    @Override
+    public void exitNewChanExpr(NewChanExprContext ctx) {
+        // TODO Auto-generated method stub
 
     }
 

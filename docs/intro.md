@@ -45,8 +45,8 @@ So in Pica, we've implement quarks which interact with each other by
 sending and receiving bosons.
 
 The underlying system that runs Pica programs is the
-Hadron virtual machine. (Hadrons are the family of particles
-with mass that make up matter.)
+QGP VM, which stands for "Quark Gluon Plasma", a recently observed
+state of matter where quarks and gluons interact freely.
 
 ## Quark Basics
 
@@ -67,6 +67,87 @@ A quark consists of three parts:
 
 ## Boson Basics
 
+Bosons are very simple data types. Unlike an object-oriented language,
+there are virtually no behaviors associated with bosons. They're just
+completely passive data. A boson type is very similar to an algebraic
+type in a language like OCaml. The type has a name, which is used in
+type declarations; and it has a list of named type constructors. Each
+type constructor has a different list of arguments, which can be either
+positional ("tuple bosons") or named ("struct bosons").
+
+For convenience, Pica provides a list boson, which is basically just
+a lisp-style cons list with added syntax. It's basically:
+
+```
+boson [T]List is
+   Cons(T, [T]List)
+or Nil(Unit)
+end
+```
+
+You can write a list using a list expression, which is automatically
+parsed and transformed into cons format.
+
+```
+[1, 2, 3]: [Int]List == Cons(1, Cons(2, Cons(3, Nil(unit))))
+```
+
+## Functions
+
+Programmers are so used to functions that it's hard to imagine
+programming without them. For example, using the cons list above,
+how would you filter it for the even numbers?
+
+The "correct" way to do that in Pica would be to set up a quark
+which recieves elements on an input channel, and then sends
+elements that match the predicate on the output channel. But even
+then, if you wanted a parametric  filter, how would you do it?
+
+It's doable, but it's confusing to readers. So Pica provides
+a function construct. Under the covers, it behaves equivalently to
+a kind of quark.
+
+```
+function fact(n: Int): Int do
+  if n == 0 then
+    return 1
+  else
+    return n * fact(n - 1)
+  end
+end
+```
+
+Is equivalent to:
+```
+boson FactArg is
+   I(Int, chan Int)
+end
+
+quark fact
+  channels
+    in: chan FactArg
+  action
+    many
+      ?in do
+        on I(i, c) do
+          if i == 0 then
+            !c(1)
+          else
+            var c: chan Int = ^chan Int;
+            !fact.in(I(i-1, c))
+            ?c do
+               on Int(r) do
+                  !c(Int(i*r))
+                end
+            end
+          end
+        end
+      end
+    end
+  end
+end
+```
+
 
 
 ## Example
@@ -81,22 +162,33 @@ stream, and assembles them into a token. When it reads a complete
 token, it sends it as a boson on its output channel.
 
 ```
-boson ScannerOutput
+boson ScannerOutput is
     Token{type: String, content: String, line: Int}
 or  EndOfStream(Unit)
 or  ScanError{message: String, line: Int}
 end
 
+boson InputStreamEvent is
+  More(Char)
+or End(Unit)
+end
+
+quark InputStream(path: String)
+  channels
+    chan chars: InputStreamEvent
+  ...
+end
+
+
 quark Scanner(in: InputStream)
   state
-     slot input: InputStream = in
+     slot input: InputStream = in.chars
      slot currentToken: String = ""
   channels
      chan output: ScannerOutput
-
   action
     repeat
-        ?input(c)
+        ?input do
             on More(c) do
                 currentToken += c;
                 if ... then

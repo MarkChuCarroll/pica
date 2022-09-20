@@ -562,68 +562,6 @@ class ParserTest {
                                }
                             }
                          }
-                         BosonMessagePatternAction{
-                            BosonTuplePattern{
-                               End
-                               fields{
-                                  u
-                               }
-                            }
-                            Action::Sequence{
-                               Action::Send{
-                                  Identifier::Simple{
-                                     output
-                                  }
-                                  BosonStructExpr{
-                                     Identifier::Simple{
-                                        Token
-                                     }
-                                     fields{
-                                        field{
-                                           line
-                                           Expr::Literal::INTLIT{
-                                              18
-                                           }
-                                        }
-                                        field{
-                                           type
-                                           Expr::Literal::STRLIT{
-                                              "t"
-                                           }
-                                        }
-                                        field{
-                                           content
-                                           Lvalue::Identifier{
-                                              Identifier::Simple{
-                                                 currentToken
-                                              }
-                                           }
-                                        }
-                                     }
-                                  }
-                               }
-                               Action::Sequence{
-                                  Action::Send{
-                                     Identifier::Simple{
-                                        output
-                                     }
-                                     Expr::BosonTuple{
-                                        Identifier::Simple{
-                                           EndOfStream
-                                        }
-                                        fields{
-                                           Lvalue::Identifier{
-                                              Identifier::Simple{
-                                                 Unit
-                                              }
-                                           }
-                                        }
-                                     }
-                                  }
-                                  Action::Exit
-                               }
-                            }
-                         }
                       }
                    }
                 }
@@ -631,6 +569,7 @@ class ParserTest {
           }
        }
        """;
+
       assertEquals(expected, m.toString());
     }
 

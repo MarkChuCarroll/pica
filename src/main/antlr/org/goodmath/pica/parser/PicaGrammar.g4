@@ -40,7 +40,7 @@ quarkDef:
        ('state'
           slotDef+)?
        'action' action
-   'end'
+   'endquark'
  ;
 
 slotDef:
@@ -69,7 +69,7 @@ typeList:
 ;
 
 funDef: // TODO
-   'fun' ID (typeParamBlock)? argSpec ':' type 'do' action 'end'
+   'fun' ID (typeParamBlock)? argSpec ':' type 'do' action 'endfun'
 ;
 
 argSpec:
@@ -98,7 +98,7 @@ typeArgBlock:
  end
 */
 bosonDef:
-   'boson' (typeParamBlock)? ID 'is' bosonBody 'end'
+   'boson' (typeParamBlock)? ID 'is' bosonBody 'endboson'
 ;
 
 
@@ -131,7 +131,7 @@ action:
         onClause+
       'end'  # receiveAction
 | 'var' ID ':' type  '=' expr         # vardefStmt// variable definition.
-| 'if' cond=expr 'then' t=action 'else' f=action 'end'  # ifAction
+| 'if' cond=expr 'then' t=action 'else' f=action 'endif'  # ifAction
 | 'while' expr 'do' action 'end'                  # whileAction
 | 'repeat' action 'end' # loopAction
 | 'for' ID 'in' expr 'do' action  'end'           # forAction
@@ -169,7 +169,8 @@ lvalue:
 expr:
   // start a process; returns the process ID, which can be used for sending
   // messages to the process.
-  '^' type '(' (exprList)? ')'  # runExpr
+    'run' type '(' (exprList)? ')'  # runExpr
+  | 'newchan' type  # newChanExpr
   | l=expr op=('and' | 'or' ) r=expr  # logicExpr
   | l=expr op=('==' | '!=' | '>' | '>=' | '<' | '<=') r=expr  # compareExpr
   | l=expr op=('+' | '-'  )  r=expr  # addExpr
@@ -203,11 +204,11 @@ ident:
    (ID '::')* ID
 ;
 
-ID : [a-zA-Z_]+ [-a-zA-Z0-9_]*
+ID : [a-zA-Z_]+ [a-zA-Z0-9_]*
 ;
 
 LIT_SYMBOL:
-    '#' [a-zA-Z_]+ [-a-zA-Z0-9_]*
+    '#' [a-zA-Z_]+ [a-zA-Z0-9_]*
 ;
 
 LIT_STRING :  '"' (ESC | ~["\\])* '"' ;
