@@ -3,7 +3,8 @@ package org.goodmath.pica.ast.types;
 import java.util.List;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 
 public class FunType extends Type {
@@ -25,11 +26,11 @@ public class FunType extends Type {
     }
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("Type::Function",
-            List.of(new TagTree("params",
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("Type::Function",
+            List.of(new PPTagNode("params",
                 getArgs().stream().map(Type::getTree).toList()),
-                returnType.getTree()));
+                getReturnType().getTree()));
     }
 
 }

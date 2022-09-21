@@ -38,6 +38,6 @@ public class SourceFileLocation extends Location {
 
     @Override
     public String toString() {
-        return String.format("%s (line %d, col %d)", filename, line, col);
+        return String.format("%s (line %d, col %d)", getFilename(), getLine(), getCol());
     }
 }

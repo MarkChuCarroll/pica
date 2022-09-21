@@ -25,7 +25,8 @@ import org.goodmath.pica.ast.actions.Action;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
 import org.goodmath.pica.types.Defined;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 
 public class QuarkDef extends Definition {
@@ -78,20 +79,18 @@ public class QuarkDef extends Definition {
     }
 
     @Override
-    public TagTree getTree() {
-        List<TagTree> children = new ArrayList<>();
-        getTypeParams().ifPresent(tps -> {
-            children.add(new TagTree("typeParams",
-                tps.stream().map(TypeParamSpec::getTree).toList()));
-        });
-        children.add(new TagTree("params",
+    public PrettyPrintTree getTree() {
+        List<PrettyPrintTree> children = new ArrayList<>();
+        getTypeParams().ifPresent(tps -> children.add(new PPTagNode("typeParams",
+            tps.stream().map(TypeParamSpec::getTree).toList())));
+        children.add(new PPTagNode("params",
             getParams().stream().map(TypedParameter::getTree).toList()));
-        children.add(new TagTree("channels",
-            channels.stream().map(ChannelDef::getTree).toList()));
-        children.add(new TagTree("slots",
+        children.add(new PPTagNode("channels",
+            getChannels().stream().map(ChannelDef::getTree).toList()));
+        children.add(new PPTagNode("slots",
             getSlots().stream().map(SlotDef::getTree).toList()));
         children.add(action.getTree());
-        return new TagTree("Def::Quark",
+        return new PPTagNode("Def::Quark",
             children);
     }
 }

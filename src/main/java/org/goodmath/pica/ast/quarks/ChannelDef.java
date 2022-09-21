@@ -17,7 +17,9 @@ package org.goodmath.pica.ast.quarks;
 import org.goodmath.pica.ast.AstNode;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPFieldNode;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 import java.util.List;
 
@@ -42,9 +44,9 @@ public class ChannelDef extends AstNode {
 
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("ChannelDef",
-            List.of(new TagTree(getName()),
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("ChannelDef",
+            List.of(new PPFieldNode("name", getName()),
                 getType().getTree()));
 
     }

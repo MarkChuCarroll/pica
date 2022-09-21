@@ -26,6 +26,6 @@ public class SystemLocation extends Location {
 
     @Override
     public String toString() {
-        return description;
+        return getDescription();
     }
 }

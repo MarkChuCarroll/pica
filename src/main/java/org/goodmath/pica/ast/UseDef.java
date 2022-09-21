@@ -14,17 +14,15 @@
  */
 package org.goodmath.pica.ast;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.types.Defined;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPLeafNode;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 public class UseDef extends AstNode {
     private final Identifier id;
@@ -58,35 +56,15 @@ public class UseDef extends AstNode {
         }
     }
 
-
-    public static class UseSerializer extends JsonSerializer<UseDef> {
-
-        @Override
-        public void serialize(UseDef value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("kind", "UseDef");
-            gen.writeStringField("module", value.getId().toString());
-            if (!value.getNames().isEmpty()) {
-                gen.writeArrayFieldStart("names");
-                for (String name : value.getNames()) {
-                    gen.writeString(name);
-                }
-                gen.writeEndArray();
-            }
-            gen.writeEndObject();
-        }
-    }
-
-
     @Override
-    public TagTree getTree() {
-        List<TagTree> children = new ArrayList<>();
+    public PrettyPrintTree getTree() {
+        List<PrettyPrintTree> children = new ArrayList<>();
         children.add(getId().getTree());
         if (!getNames().isEmpty()) {
-            children.add(new TagTree("names",
-                getNames().stream().map(n -> new TagTree(n)).toList()));
+            children.add(new PPTagNode("names",
+                getNames().stream().map(n -> (PrettyPrintTree) new PPLeafNode(n)).toList()));
         }
-        return new TagTree("Def::Use", children);
+        return new PPTagNode("Def::Use", children);
     }
 
 }

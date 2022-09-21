@@ -18,7 +18,9 @@ import org.goodmath.pica.ast.actions.Action;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
 import org.goodmath.pica.types.Defined;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPFieldNode;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,20 +60,20 @@ public class FunctionDef extends Definition {
     }
 
     @Override
-    public TagTree getTree() {
-        List<TagTree> children = new ArrayList<>();
-        children.add(new TagTree(getName()));
+    public PrettyPrintTree getTree() {
+        List<PrettyPrintTree> children = new ArrayList<>();
+        children.add(new PPFieldNode("name", getName()));
         getTypeParams().ifPresent(tps ->
-            children.add(new TagTree("TypeParams",
+            children.add(new PPTagNode("TypeParams",
                 tps.stream().map(TypeParamSpec::getTree).toList()))
         );
-        children.add(new TagTree("Params",
+        children.add(new PPTagNode("Params",
             getParams().stream().map(TypedParameter::getTree).toList()));
         children.add(getResultType().getTree());
         children.add(getAction().getTree());
 
 
-        return new TagTree("Def::Function",
+        return new PPTagNode("Def::Function",
             children);
 
     }

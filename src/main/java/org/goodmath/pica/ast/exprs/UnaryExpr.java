@@ -15,7 +15,9 @@
 package org.goodmath.pica.ast.exprs;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPLeafNode;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 import java.util.List;
 
@@ -42,9 +44,9 @@ public class UnaryExpr extends Expr {
     }
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("Expr::Unary",
-            List.of(new TagTree(op.toString()),
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("Expr::Unary",
+            List.of(new PPLeafNode(getOp().toString()),
                 getExpr().getTree()));
     }
 

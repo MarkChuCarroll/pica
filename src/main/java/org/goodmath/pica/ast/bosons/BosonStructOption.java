@@ -19,7 +19,9 @@ import java.util.Map;
 
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPFieldNode;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 public class BosonStructOption extends BosonOption {
     private final Map<String, Type> fields;
@@ -35,16 +37,16 @@ public class BosonStructOption extends BosonOption {
 
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("BosonOption::Struct",
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("BosonOption::Struct",
             List.of(
-                new TagTree(getName()),
-                new TagTree("fields",
+                new PPFieldNode("optionName", getName()),
+                new PPTagNode("fields",
                     getFields().entrySet().stream().map(entry ->
-                        new TagTree("field",
-                           List.of(new TagTree(entry.getKey()),
-                           entry.getValue().getTree())))
-                           .toList())));
+                            (PrettyPrintTree)new PPTagNode("field",
+                                    List.of(new PPFieldNode("name", entry.getKey()),
+                                            entry.getValue().getTree())))
+                            .toList())));
 
     }
 

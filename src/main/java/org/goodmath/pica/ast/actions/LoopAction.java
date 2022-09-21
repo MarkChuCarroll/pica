@@ -3,7 +3,8 @@ package org.goodmath.pica.ast.actions;
 import java.util.List;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 public class LoopAction extends Action {
     private final Action body;
@@ -18,8 +19,8 @@ public class LoopAction extends Action {
     }
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("Action::Loop",
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("Action::Loop",
             List.of(getBody().getTree()));
     }
 

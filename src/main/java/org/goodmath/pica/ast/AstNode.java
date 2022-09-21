@@ -16,7 +16,7 @@ package org.goodmath.pica.ast;
 
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 public abstract class AstNode {
     private final Location location;
@@ -29,7 +29,7 @@ public abstract class AstNode {
         this.location = loc;
     }
 
-    public abstract TagTree getTree();
+    public abstract PrettyPrintTree getTree();
 
 
     public String toString() {

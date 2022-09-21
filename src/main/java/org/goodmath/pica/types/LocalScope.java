@@ -13,7 +13,7 @@ public class LocalScope extends Scope {
     }
 
     @Override
-    Optional<Defined> getDefinition(Identifier id) {
+    public Optional<Defined> getDefinition(Identifier id) {
         if (id.getModule().isEmpty() && definitions.containsKey(id.getName())) {
             return Optional.of(definitions.get(id.getName()));
         } else {
@@ -22,7 +22,7 @@ public class LocalScope extends Scope {
     }
 
     @Override
-    Optional<Type> getType(Identifier id) {
+    public Optional<Type> getType(Identifier id) {
         if (id.getModule().isEmpty() && types.containsKey(id.getName())) {
             return Optional.of(types.get(id.getName()));
         } else {

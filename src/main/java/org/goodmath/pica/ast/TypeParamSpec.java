@@ -20,7 +20,9 @@ import java.util.Optional;
 
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPLeafNode;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 public class TypeParamSpec extends AstNode {
     private final String name;
@@ -41,11 +43,11 @@ public class TypeParamSpec extends AstNode {
     }
 
     @Override
-    public TagTree getTree() {
-        List<TagTree> children = new ArrayList<>();
-        children.add(new TagTree(getName()));
+    public PrettyPrintTree getTree() {
+        List<PrettyPrintTree> children = new ArrayList<>();
+        children.add(new PPLeafNode(getName()));
         getConstraint().ifPresent(c ->
-            children.add(new TagTree("constraint", List.of(c.getTree()))));
-        return new TagTree("TypedParamSpec", children);
+            children.add(new PPTagNode("constraint", List.of(c.getTree()))));
+        return new PPTagNode("TypedParamSpec", children);
     }
 }

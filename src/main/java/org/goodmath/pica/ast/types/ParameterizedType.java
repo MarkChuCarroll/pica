@@ -17,7 +17,8 @@ package org.goodmath.pica.ast.types;
 import java.util.List;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 public class ParameterizedType extends Type {
     private final NamedType base;
@@ -38,10 +39,10 @@ public class ParameterizedType extends Type {
     }
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("Type::Parameterized",
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("Type::Parameterized",
             List.of(
-                new TagTree("typeParams",
+                new PPTagNode("typeParams",
                     getParams().stream().map(Type::getTree).toList()),
                 getBase().getTree()));
     }

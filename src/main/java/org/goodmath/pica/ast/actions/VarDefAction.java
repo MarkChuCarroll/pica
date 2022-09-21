@@ -17,15 +17,17 @@ package org.goodmath.pica.ast.actions;
 import org.goodmath.pica.ast.exprs.Expr;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPFieldNode;
+import org.goodmath.pica.util.PPTagNode;
 
 import lombok.Getter;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 import java.util.List;
 
 @Getter
 public class VarDefAction extends Action {
-    private String name;
+    private final String name;
     private final Type type;
     private final Expr value;
 
@@ -37,12 +39,12 @@ public class VarDefAction extends Action {
     }
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("Action::VarDef",
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("Action::VarDef",
             List.of(
-                new TagTree(getName()),
-                getType().getTree(),
-                getValue().getTree()));
+                    new PPFieldNode("var", getName()),
+                    getType().getTree(),
+                    getValue().getTree()));
 
     }
 }
