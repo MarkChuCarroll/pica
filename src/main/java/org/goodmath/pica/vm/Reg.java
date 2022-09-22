@@ -1,4 +1,18 @@
-package org.goodmath.pica.qgp;
+/* Copyright 2022, Mark C. Chu-Carroll
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.goodmath.pica.vm;
 
 /**
  * The machine has unlimited registers, addressed by a unique,
@@ -14,10 +28,6 @@ package org.goodmath.pica.qgp;
  * The local storage is numbered registers.</p>
  */
 public class Reg {
-    public static class StackReg extends Reg {
-        public StackReg() {
-        }
-    }
 
     public static class NamedReg extends Reg {
         private final String name;
@@ -28,6 +38,11 @@ public class Reg {
 
         public String getName() {
             return name;
+        }
+
+        @Override
+        public String toString() {
+            return getName();
         }
     }
 
@@ -41,6 +56,11 @@ public class Reg {
         public int getNum() {
             return num;
         }
+
+        @Override
+        public String toString() {
+            return "$" + getNum();
+        }
     }
 
     public static class IndirectReg extends Reg {
@@ -48,6 +68,11 @@ public class Reg {
 
         public IndirectReg(Reg r) {
             this.r = r;
+        }
+
+        @Override
+        public String toString() {
+            return "(" + r.toString() + ")";
         }
 
         public Reg getR() {
@@ -66,6 +91,21 @@ public class Reg {
 
         public Object getVal() {
             return val;
+        }
+
+        @Override
+        public String toString() {
+            return getVal().toString();
+        }
+    }
+
+    public static class QuarkReg extends Reg {
+        public QuarkReg() {
+        }
+
+        @Override
+        public String toString() {
+            return "@";
         }
     }
 }

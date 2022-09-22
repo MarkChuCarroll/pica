@@ -29,7 +29,7 @@ sourceSets {
     main {
         java {
             srcDirs 'src/main/java'
-            srcDirs files("${buildDir}/generated-src/java").builtBy(generateGrammarSource)
+            srcDirs files("${buildDir}/generated-src/antlr").builtBy(generateGrammarSource)
         }
     }
     test {
