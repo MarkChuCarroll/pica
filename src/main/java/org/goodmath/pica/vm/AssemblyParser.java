@@ -19,19 +19,27 @@ import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.goodmath.pica.ast.Identifier;
+import org.goodmath.pica.ast.Pair;
 import org.goodmath.pica.vm.QuarkPlasmaAssemblyParser.*;
+import org.goodmath.pica.vm.file.Boson;
+import org.goodmath.pica.vm.file.QGPModule;
+import org.goodmath.pica.vm.file.Quark;
 import org.goodmath.pica.vm.instructions.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class AssemblyParser implements QuarkPlasmaAssemblyListener {
 
     private final ParseTreeProperty<Object> values = new ParseTreeProperty<>();
 
-    private List<Instruction> instructions = null;
+    private QGPModule theModule = null;
 
-    public List<Instruction> getInstructions() {
-        return instructions;
+    public QGPModule getModule() {
+        return theModule;
     }
 
     private Object getValueFor(ParseTree node) {
@@ -62,13 +70,175 @@ public class AssemblyParser implements QuarkPlasmaAssemblyListener {
 
     }
 
+
     @Override
-    public void enterFile(FileContext ctx) {
+    public void enterModule(ModuleContext ctx) {
     }
 
     @Override
-    public void exitFile(FileContext ctx) {
-        instructions = ctx.labeledInstruction().stream().map(i -> (Instruction) getValueFor(i)).toList();
+    public void exitModule(ModuleContext ctx) {
+        Identifier id = Identifier.parseIdentifier(ctx.id.getText());
+        List<Identifier> reqs = (List<Identifier>)getValueFor(ctx.idList());
+        Map<String, Object> metaValues = new HashMap<String, Object>();
+        ctx.metaTag().forEach(mt -> {
+            Pair<String, Object> entry = (Pair<String, Object>)getValueFor(mt);
+            metaValues.put(entry.first(), entry.second());
+        });
+        List<Instruction> instructions = (List<Instruction>)getValueFor(ctx.body());
+        List<Quark> quarks = ctx.quark().stream().map(q -> (Quark)getValueFor(q)).toList();
+        List<Boson> bosons = ctx.boson().stream().map(b -> (Boson)getValueFor(b)).toList();
+        theModule = new QGPModule(id, reqs, metaValues, bosons, quarks, instructions);
+    }
+
+    @Override
+    public void enterBoson(BosonContext ctx) {
+
+    }
+
+    @Override
+    public void exitBoson(BosonContext ctx) {
+        String name = ctx.name.getText();
+        List<Pair<String, List<Identifier>>> options =
+                ctx.bosonOption().stream()
+                        .map(o -> (Pair<String, List<Identifier>>)getValueFor(o))
+                        .toList();
+        setValueFor(ctx, new Boson(name, options));
+    }
+
+    @Override
+    public void enterBosonOption(BosonOptionContext ctx) {
+
+    }
+
+    @Override
+    public void exitBosonOption(BosonOptionContext ctx) {
+        String name = ctx.name.getText();
+        List<Identifier> types = (List<Identifier>)getValueFor(ctx.idList());
+        setValueFor(ctx, new Pair<>(name, types));
+    }
+
+    @Override
+    public void enterQuark(QuarkContext ctx) {
+
+    }
+
+    @Override
+    public void exitQuark(QuarkContext ctx) {
+        String name = ctx.name.getText();
+        List<Pair<String, Identifier>> channels =
+                (List<Pair<String, Identifier>>)getValueFor(ctx.chs);
+        List<Pair<String, Identifier>> fields =
+                (List<Pair<String, Identifier>>)getValueFor(ctx.fs);
+        CodeLocation entry = (CodeLocation)getValueFor(ctx.l);
+        setValueFor(ctx, new Quark(name, channels, fields, entry));
+    }
+
+    @Override
+    public void enterTypedIdList(TypedIdListContext ctx) {
+
+    }
+
+    @Override
+    public void exitTypedIdList(TypedIdListContext ctx) {
+        setValueFor(ctx, ctx.typedId().stream().map(id -> (Pair<String, Identifier>)getValueFor(id)).toList());
+
+    }
+
+    @Override
+    public void enterTypedId(TypedIdContext ctx) {
+
+    }
+
+    @Override
+    public void exitTypedId(TypedIdContext ctx) {
+        String name = ctx.k.getText();
+        Identifier type = Identifier.parseIdentifier(ctx.v.getText());
+        setValueFor(ctx, new Pair<>(name, type));
+    }
+
+    @Override
+    public void enterMetaTag(MetaTagContext ctx) {
+
+    }
+
+    @Override
+    public void exitMetaTag(MetaTagContext ctx) {
+        String key = ctx.ID().getText();
+        Object val = getValueFor(ctx.metaValue());
+        setValueFor(ctx, new Pair<>(key, val));
+    }
+
+    @Override
+    public void enterMetaId(MetaIdContext ctx) {
+
+    }
+
+    @Override
+    public void exitMetaId(MetaIdContext ctx) {
+        setValueFor(ctx, ctx.ID().getText());
+    }
+
+    @Override
+    public void enterMetaStr(MetaStrContext ctx) {
+
+    }
+
+    @Override
+    public void exitMetaStr(MetaStrContext ctx) {
+        setValueFor(ctx, ctx.LIT_STRING().getText());
+    }
+
+    @Override
+    public void enterMetaInt(MetaIntContext ctx) {
+
+    }
+
+    @Override
+    public void exitMetaInt(MetaIntContext ctx) {
+        setValueFor(ctx, Integer.parseInt(ctx.LIT_INT().getText()));
+    }
+
+    @Override
+    public void enterMetaList(MetaListContext ctx) {
+
+    }
+
+    @Override
+    public void exitMetaList(MetaListContext ctx) {
+        setValueFor(ctx, getValueFor(ctx.metaValueList()));
+    }
+
+    @Override
+    public void enterMetaValueList(MetaValueListContext ctx) {
+    }
+
+    @Override
+    public void exitMetaValueList(MetaValueListContext ctx) {
+        List<Object> values = new ArrayList<>();
+        for (MetaValueContext metaValueContext : ctx.metaValue()) {
+            values.add(getValueFor(metaValueContext));
+        }
+        setValueFor(ctx, values);
+    }
+
+    @Override
+    public void enterIdList(IdListContext ctx) {
+
+    }
+
+    @Override
+    public void exitIdList(IdListContext ctx) {
+        setValueFor(ctx, ctx.ID().stream().map(id -> Identifier.parseIdentifier(id.getText())).toList());
+    }
+
+    @Override
+    public void enterBody(BodyContext ctx) {
+
+    }
+
+    @Override
+    public void exitBody(BodyContext ctx) {
+        setValueFor(ctx, ctx.labeledInstruction().stream().map(i -> (Instruction) getValueFor(i)).toList());
     }
 
     @Override
@@ -207,8 +377,8 @@ public class AssemblyParser implements QuarkPlasmaAssemblyListener {
     @Override
     public void exitBset(BsetContext ctx) {
         Reg tgt = (Reg) getValueFor(ctx.tgt);
-        String type = ctx.t.getText();
-        String field = ctx.f.getText();
+        String type = ctx.typeName.getText();
+        int field = Integer.parseInt(ctx.field.getText());
         Reg val = (Reg) getValueFor(ctx.val);
         setValueFor(ctx, new BSetField(tgt, type, field, val));
     }

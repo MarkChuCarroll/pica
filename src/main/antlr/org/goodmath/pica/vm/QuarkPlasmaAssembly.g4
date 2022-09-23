@@ -16,7 +16,70 @@ grammar QuarkPlasmaAssembly;
 
 @header { package org.goodmath.pica.vm; }
 
-file:
+module:
+   '==Headers\n'
+   'module' '=' id=ID ';'
+   ('requires' '=' '[' reqs=idList ']' ';')?
+   ( metaTag ';' )*
+   '--'
+   '==Bosons'
+   boson+
+   '==Quarks'
+   quark+
+   '==Instructions'
+   body
+;
+
+boson:
+   'boson'
+   'name' '=' name=ID ';'
+   ( bosonOption )+
+   '--'
+;
+
+bosonOption:
+  'option'
+  name=ID '(' fieldTypes=idList ')' ';'
+;
+
+
+quark:
+   'quark'
+   'name' '=' name=ID ';'
+   'channels' '=' '[' chs=typedIdList ']' ';'
+   'fields' '=' '[' fs=typedIdList ']' ';'
+   'entryPoint' '=' l=loc ';'
+   '--'
+;
+
+typedIdList:
+   typedId ( ',' typedId )*
+;
+
+typedId:
+   '(' k=ID ',' v=ID ')'
+;
+
+metaTag:
+   ID '=' metaValue
+;
+
+metaValue:
+    ID  # metaId
+|  LIT_STRING # metaStr
+|  LIT_INT # metaInt
+|  '[' metaValueList ']' # metaList
+;
+
+metaValueList:
+   metaValue (',' metaValue)*
+;
+
+idList:
+  ID (',' ID)*
+;
+
+body:
    (labeledInstruction ';')+;
 
 labeledInstruction:
@@ -73,7 +136,7 @@ brIf:
 
 
 bget:
-    'bGet' tgt=reg ',' src=reg ',' fld=ID
+    'bGet' tgt=reg ',' src=reg ',' fld=LIT_INT
 ;
 
 
@@ -84,7 +147,7 @@ bnew:
 
 
 bset :
-   'bSet' tgt=reg ',' t=ID ',' f=ID ',' val=reg
+   'bSet' tgt=reg ',' typeName=ID ',' field=LIT_INT ',' val=reg
 
 ;
 

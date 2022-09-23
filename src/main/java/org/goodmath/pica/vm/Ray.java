@@ -14,6 +14,8 @@
  */
 package org.goodmath.pica.vm;
 
+import org.goodmath.pica.vm.file.Quark;
+
 import java.util.Map;
 import java.util.TreeMap;
 
