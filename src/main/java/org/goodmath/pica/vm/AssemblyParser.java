@@ -22,9 +22,9 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.Pair;
 import org.goodmath.pica.vm.QuarkPlasmaAssemblyParser.*;
-import org.goodmath.pica.vm.file.Boson;
-import org.goodmath.pica.vm.file.QGPModule;
-import org.goodmath.pica.vm.file.Quark;
+import org.goodmath.pica.vm.hadron.BosonSpec;
+import org.goodmath.pica.vm.hadron.Hadron;
+import org.goodmath.pica.vm.hadron.QuarkSpec;
 import org.goodmath.pica.vm.instructions.*;
 
 import java.util.ArrayList;
@@ -36,9 +36,9 @@ public class AssemblyParser implements QuarkPlasmaAssemblyListener {
 
     private final ParseTreeProperty<Object> values = new ParseTreeProperty<>();
 
-    private QGPModule theModule = null;
+    private Hadron theModule = null;
 
-    public QGPModule getModule() {
+    public Hadron getModule() {
         return theModule;
     }
 
@@ -79,15 +79,15 @@ public class AssemblyParser implements QuarkPlasmaAssemblyListener {
     public void exitModule(ModuleContext ctx) {
         Identifier id = Identifier.parseIdentifier(ctx.id.getText());
         List<Identifier> reqs = (List<Identifier>)getValueFor(ctx.idList());
-        Map<String, Object> metaValues = new HashMap<String, Object>();
+        Map<Identifier, Object> metaValues = new HashMap<>();
         ctx.metaTag().forEach(mt -> {
-            Pair<String, Object> entry = (Pair<String, Object>)getValueFor(mt);
+            Pair<Identifier, Object> entry = (Pair<Identifier, Object>)getValueFor(mt);
             metaValues.put(entry.first(), entry.second());
         });
         List<Instruction> instructions = (List<Instruction>)getValueFor(ctx.body());
-        List<Quark> quarks = ctx.quark().stream().map(q -> (Quark)getValueFor(q)).toList();
-        List<Boson> bosons = ctx.boson().stream().map(b -> (Boson)getValueFor(b)).toList();
-        theModule = new QGPModule(id, reqs, metaValues, bosons, quarks, instructions);
+        List<QuarkSpec> quarkSpecs = ctx.quark().stream().map(q -> (QuarkSpec)getValueFor(q)).toList();
+        List<BosonSpec> bosonSpecs = ctx.boson().stream().map(b -> (BosonSpec)getValueFor(b)).toList();
+        theModule = new Hadron(id, reqs, metaValues, bosonSpecs, quarkSpecs, instructions);
     }
 
     @Override
@@ -102,7 +102,7 @@ public class AssemblyParser implements QuarkPlasmaAssemblyListener {
                 ctx.bosonOption().stream()
                         .map(o -> (Pair<String, List<Identifier>>)getValueFor(o))
                         .toList();
-        setValueFor(ctx, new Boson(name, options));
+        setValueFor(ctx, new BosonSpec(name, options));
     }
 
     @Override
@@ -130,7 +130,7 @@ public class AssemblyParser implements QuarkPlasmaAssemblyListener {
         List<Pair<String, Identifier>> fields =
                 (List<Pair<String, Identifier>>)getValueFor(ctx.fs);
         CodeLocation entry = (CodeLocation)getValueFor(ctx.l);
-        setValueFor(ctx, new Quark(name, channels, fields, entry));
+        setValueFor(ctx, new QuarkSpec(name, channels, fields, entry));
     }
 
     @Override
@@ -163,7 +163,7 @@ public class AssemblyParser implements QuarkPlasmaAssemblyListener {
 
     @Override
     public void exitMetaTag(MetaTagContext ctx) {
-        String key = ctx.ID().getText();
+        Identifier key = (Identifier)getValueFor(ctx.ident());
         Object val = getValueFor(ctx.metaValue());
         setValueFor(ctx, new Pair<>(key, val));
     }
@@ -175,7 +175,7 @@ public class AssemblyParser implements QuarkPlasmaAssemblyListener {
 
     @Override
     public void exitMetaId(MetaIdContext ctx) {
-        setValueFor(ctx, ctx.ID().getText());
+        setValueFor(ctx, getValueFor(ctx.ident()));
     }
 
     @Override
@@ -228,7 +228,7 @@ public class AssemblyParser implements QuarkPlasmaAssemblyListener {
 
     @Override
     public void exitIdList(IdListContext ctx) {
-        setValueFor(ctx, ctx.ID().stream().map(id -> Identifier.parseIdentifier(id.getText())).toList());
+        setValueFor(ctx, ctx.ident().stream().map(id -> (Identifier)getValueFor(id)).toList());
     }
 
     @Override
@@ -540,6 +540,17 @@ public class AssemblyParser implements QuarkPlasmaAssemblyListener {
     }
 
     @Override
+    public void enterJmp(JmpContext ctx) {
+
+    }
+
+    @Override
+    public void exitJmp(JmpContext ctx) {
+        CodeLocation loc = (CodeLocation)getValueFor(ctx.loc());
+        setValueFor(ctx, new Jmp(loc));
+    }
+
+    @Override
     public void enterQgetc(QgetcContext ctx) {
     }
 
@@ -618,6 +629,17 @@ public class AssemblyParser implements QuarkPlasmaAssemblyListener {
     }
 
     @Override
+    public void enterSel(SelContext ctx) {
+
+    }
+
+    @Override
+    public void exitSel(SelContext ctx) {
+        List<Reg> continuations = (List<Reg>)getValueFor(ctx.regList());
+        setValueFor(ctx, new Select(continuations));
+    }
+
+    @Override
     public void enterRecv(RecvContext ctx) {
     }
 
@@ -647,8 +669,8 @@ public class AssemblyParser implements QuarkPlasmaAssemblyListener {
 
     @Override
     public void exitSpawn(SpawnContext ctx) {
-        Reg cont = (Reg) getValueFor(ctx.r);
-        setValueFor(ctx, new Spawn(cont));
+        List<Reg> conts = (List<Reg>) getValueFor(ctx.r);
+        setValueFor(ctx, new Spawn(conts));
     }
 
     @Override
@@ -659,6 +681,18 @@ public class AssemblyParser implements QuarkPlasmaAssemblyListener {
     @Override
     public void exitStop(StopContext ctx) {
         setValueFor(ctx, new Stop());
+    }
+
+    @Override
+    public void enterIdent(IdentContext ctx) {
+
+    }
+
+    @Override
+    public void exitIdent(IdentContext ctx) {
+        List<String> parts = ctx.ID().stream().map(Object::toString).toList();
+        Identifier id = Identifier.fromList(parts);
+        setValueFor(ctx, id);
     }
 
     @Override
@@ -688,6 +722,15 @@ public class AssemblyParser implements QuarkPlasmaAssemblyListener {
     @Override
     public void exitIbrif(IbrifContext ctx) {
         setValueFor(ctx, getValueFor(ctx.brIf()));
+    }
+
+    @Override
+    public void enterIjmp(IjmpContext ctx) {
+    }
+
+    @Override
+    public void exitIjmp(IjmpContext ctx) {
+        setValueFor(ctx, getValueFor(ctx.jmp()));
     }
 
     @Override
@@ -861,6 +904,16 @@ public class AssemblyParser implements QuarkPlasmaAssemblyListener {
     @Override
     public void exitInot(InotContext ctx) {
         setValueFor(ctx, getValueFor(ctx.not()));
+    }
+
+    @Override
+    public void enterISel(ISelContext ctx) {
+
+    }
+
+    @Override
+    public void exitISel(ISelContext ctx) {
+        setValueFor(ctx, getValueFor(ctx.sel()));
     }
 
     @Override

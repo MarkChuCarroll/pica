@@ -17,8 +17,8 @@ grammar QuarkPlasmaAssembly;
 @header { package org.goodmath.pica.vm; }
 
 module:
-   '==Headers\n'
-   'module' '=' id=ID ';'
+   '==Headers'
+   'module' '=' id=ident ';'
    ('requires' '=' '[' reqs=idList ']' ';')?
    ( metaTag ';' )*
    '--'
@@ -32,7 +32,7 @@ module:
 
 boson:
    'boson'
-   'name' '=' name=ID ';'
+   'name' '=' name=ident';'
    ( bosonOption )+
    '--'
 ;
@@ -45,7 +45,7 @@ bosonOption:
 
 quark:
    'quark'
-   'name' '=' name=ID ';'
+   'name' '=' name=ident ';'
    'channels' '=' '[' chs=typedIdList ']' ';'
    'fields' '=' '[' fs=typedIdList ']' ';'
    'entryPoint' '=' l=loc ';'
@@ -57,15 +57,15 @@ typedIdList:
 ;
 
 typedId:
-   '(' k=ID ',' v=ID ')'
+   '(' k=ID ',' v=ident ')'
 ;
 
 metaTag:
-   ID '=' metaValue
+   ident '=' metaValue
 ;
 
 metaValue:
-    ID  # metaId
+    ident  # metaId
 |  LIT_STRING # metaStr
 |  LIT_INT # metaInt
 |  '[' metaValueList ']' # metaList
@@ -76,7 +76,7 @@ metaValueList:
 ;
 
 idList:
-  ID (',' ID)*
+  ident (',' ident)*
 ;
 
 body:
@@ -90,6 +90,7 @@ instruction:
    bget  # ibget
 |  bnew  # ibnew
 |  brIf  # ibrif
+|  jmp   # ijmp
 |  bset  # ibset
 |  cnew  # icnew
 |  convert # iconvert
@@ -109,6 +110,7 @@ instruction:
 |  fInv   #ifinv
 |  sLen  # islen
 |  not # inot
+|  sel # iSel
 ;
 
 reg:
@@ -141,13 +143,13 @@ bget:
 
 
 bnew:
-   'bNew' r=reg ',' type=ID (',' args=regList)?
+   'bNew' r=reg ',' type=ident (',' args=regList)?
 
 ;
 
 
 bset :
-   'bSet' tgt=reg ',' typeName=ID ',' field=LIT_INT ',' val=reg
+   'bSet' tgt=reg ',' typeName=ident ',' field=LIT_INT ',' val=reg
 
 ;
 
@@ -193,20 +195,24 @@ fInv:
    'fInv' tgt=reg ',' src=reg
 ;
 
+jmp:
+   'jmp' loc
+;
+
 qgetc:
-   'qGetC' tgt=reg ',' q=reg ',' qt=ID ',' name=ID
+   'qGetC' tgt=reg ',' q=reg ',' qt=ident ',' name=ID
    ;
 
 qgets:
-   'qGetS' tgt=reg ',' q=reg ',' qt=ID ',' name=ID
+   'qGetS' tgt=reg ',' q=reg ',' qt=ident ',' name=ID
 ;
 
 qsets:
-   'qSetS' tgt=reg ',' qt=ID ',' name=ID ',' val=reg
+   'qSetS' tgt=reg ',' qt=ident ',' name=ID ',' val=reg
 ;
 
 qnew :
-   'qNew' tgt=reg ',' qt=ID  (',' regList)?
+   'qNew' tgt=reg ',' qt=ident  (',' regList)?
 ;
 
 rnew:
@@ -215,6 +221,10 @@ rnew:
 
 send :
    'send' ch=reg ',' msg=reg ',' c=reg
+;
+
+sel:
+  'sel' regList
 ;
 
 recv:
@@ -226,14 +236,18 @@ sLen:
 ;
 
 spawn:
-   'spawn' r=reg
+   'spawn' r=regList
 ;
 
 stop:
    'stop'
 ;
 
-ID : [a-zA-Z_]+ [a-zA-Z0-9_:]*
+ident:
+   ID ('::' ID)*
+;
+
+ID : [a-zA-Z_]+ [a-zA-Z0-9_]*
 ;
 
 LIT_STRING :  '"' (ESC | ~["\\])* '"' ;

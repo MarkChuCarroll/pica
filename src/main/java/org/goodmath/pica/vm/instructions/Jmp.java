@@ -12,35 +12,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.goodmath.pica.vm.values;
+package org.goodmath.pica.vm.instructions;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.goodmath.pica.ast.Identifier;
+import org.goodmath.pica.vm.CodeLocation;
 
+/**
+ * Unconditional branch.
+ *
+ * <pre>
+ *     jmp loc;
+ * </pre>
+ */
 @AllArgsConstructor
 @Getter
-public class BosonValue extends Value {
-
-    /**
-     * The fully qualified identifier of the boson option for this value.
-     */
-    private Identifier bosonType;
-    private Value[] fields;
+public class Jmp extends Instruction {
+    CodeLocation loc;
 
     @Override
-    public VType getType() {
-        return VType.BosonType;
-    }
-
-    public BosonValue setField(int idx, Value v) {
-        Value[] newFields = fields.clone();
-        newFields[idx] = v;
-        return new BosonValue(bosonType, newFields);
-    }
-
-    public Value getField(int idx, Value v) {
-        // TODO: bounds check??
-        return fields[idx];
+    public String toString() {
+        return String.format("%sjmp %s;\n",
+                labelMarker(), loc.toString());
     }
 }

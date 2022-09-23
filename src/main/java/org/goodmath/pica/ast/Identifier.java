@@ -20,6 +20,7 @@ import org.goodmath.pica.util.PPLeafNode;
 import org.goodmath.pica.util.PPTagNode;
 import org.goodmath.pica.util.PrettyPrintTree;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,6 +54,10 @@ public class Identifier extends AstNode {
 
     public static Identifier parseIdentifier(String idStr) {
         String[] bits = idStr.split("::");
+        return fromList(List.of(bits));
+    }
+
+    public static Identifier fromList(List<String> bits) {
         Identifier current = null;
         for (String bit: bits) {
             current = new Identifier(Optional.ofNullable(current),

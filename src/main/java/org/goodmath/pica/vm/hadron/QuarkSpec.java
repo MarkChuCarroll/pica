@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.goodmath.pica.vm.file;
+package org.goodmath.pica.vm.hadron;
 
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.Pair;
@@ -24,7 +24,7 @@ import java.util.List;
  * @param channels name to channel type.
  * @param fields   map from name to type.
  */
-public record Quark(
+public record QuarkSpec(
         String name,
         List<Pair<String, Identifier>> channels,
         List<Pair<String, Identifier>> fields,

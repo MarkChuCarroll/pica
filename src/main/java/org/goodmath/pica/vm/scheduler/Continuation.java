@@ -12,33 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.goodmath.pica.vm.values;
+package org.goodmath.pica.vm.scheduler;
 
-import org.goodmath.pica.ast.Identifier;
+import org.goodmath.pica.vm.CodeLocation;
+import org.goodmath.pica.vm.hadron.QuarkSpec;
+import org.goodmath.pica.vm.values.Value;
 
-public class Channel extends Value {
-    private static int idCounter = 0;
+import java.util.Map;
 
-    public Channel(Identifier bosonType) {
-        this.channelId = ++idCounter;
-        this.bosonType = bosonType;
-    }
-
-    public Identifier getBosonType() {
-        return bosonType;
-    }
-
-    public int getChannelId() {
-        return channelId;
-    }
-
-    private final Identifier bosonType;
-    private final int channelId;
-
-    @Override
-    public VType getType() {
-        return VType.ChannelType;
-    }
-
+public record Continuation(
+    QuarkSpec owner,
+    Map<String, Value> registers,
+    CodeLocation entryPoint) {
 
 }

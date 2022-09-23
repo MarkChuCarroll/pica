@@ -32,21 +32,21 @@ go for something new, which sounds cool, and which makes sense to me.
 
 So - the fundamental unit of computation is called a _quark_, after the
 fundamental building block of physical matter. All of the particles that
-make up the atoms around us are formed of collections of quarks. In Pica, a quark is
+make up the atoms around us are formed of collections of quarkSpecs. In Pica, a quark is
 some defined thing that can run a variety of snippets of parallel code. It
-does small bits of local computation, and then sends messages to other quarks.
+does small bits of local computation, and then sends messages to other quarkSpecs.
 
-Those messages are called bosons. In physics, Bosons are subatomic particles
-with mediate interactions between quarks. All of the fundamental forces that
+Those messages are called bosonSpecs. In physics, Bosons are subatomic particles
+with mediate interactions between quarkSpecs. All of the fundamental forces that
 make protons and neutrons exist as particles, and stick together to form
-the matter that we see around us, are mediated by bosons.
+the matter that we see around us, are mediated by bosonSpecs.
 
-So in Pica, we've implement quarks which interact with each other by
-sending and receiving bosons.
+So in Pica, we've implement quarkSpecs which interact with each other by
+sending and receiving bosonSpecs.
 
 The underlying system that runs Pica programs is the
 QGP VM, which stands for "Quark Gluon Plasma", a recently observed
-state of matter where quarks and gluons interact freely.
+state of matter where quarkSpecs and gluons interact freely.
 
 ## Quark Basics
 
@@ -68,12 +68,12 @@ A quark consists of three parts:
 ## Boson Basics
 
 Bosons are very simple data types. Unlike an object-oriented language,
-there are virtually no behaviors associated with bosons. They're just
+there are virtually no behaviors associated with bosonSpecs. They're just
 completely passive data. A boson type is very similar to an algebraic
 type in a language like OCaml. The type has a name, which is used in
 type declarations; and it has a list of named type constructors. Each
 type constructor has a different list of arguments, which can be either
-positional ("tuple bosons") or named ("struct bosons").
+positional ("tuple bosonSpecs") or named ("struct bosonSpecs").
 
 For convenience, Pica provides a list boson, which is basically just
 a lisp-style cons list with added syntax. It's basically:

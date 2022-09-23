@@ -12,9 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.goodmath.pica.vm;
+package org.goodmath.pica.vm.scheduler;
 
-import org.goodmath.pica.vm.file.Quark;
+import org.goodmath.pica.vm.Reg;
+import org.goodmath.pica.vm.hadron.QuarkSpec;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -34,16 +35,16 @@ import java.util.TreeMap;
  * changed to a lighter weight structure with copy-on-write behavior.</p>
  */
 public class Ray {
-    private final Quark quark;
+    private final QuarkSpec quarkSpec;
     private final Map<String, Reg> state = new TreeMap<>();
 
-    public Ray(Ray creator, Quark q, int instr) {
+    public Ray(Ray creator, QuarkSpec q, int instr) {
         state.putAll(creator.state);
-        this.quark = q;
+        this.quarkSpec = q;
     }
 
-    public Quark getQuark() {
-        return quark;
+    public QuarkSpec getQuark() {
+        return quarkSpec;
     }
 
     public Map<String, Reg> getState() {

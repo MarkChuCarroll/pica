@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.goodmath.pica.vm.file;
+package org.goodmath.pica.vm.hadron;
 
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.vm.instructions.Instruction;
@@ -23,23 +23,24 @@ import java.util.Map;
 /**
  * The compiled form of a Pica module.
  */
-public record QGPModule(
+public record Hadron(
         Identifier id,
         List<Identifier> requires,
-        Map<String, Object> metaTags,
-        List<Boson> bosons,
-        List<Quark> quarks,
+        Map<Identifier, Object> metaTags,
+        List<BosonSpec> bosonSpecs,
+        List<QuarkSpec> quarks,
         List<Instruction> code) {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append("==Headers\n");
         sb.append("module = ").append(id.toString()).append(";\n");
         if (requires() != null) {
             sb.append("requires = [")
                     .append(String.join(", ", requires().stream().map(Identifier::toString).toList()))
                     .append("];\n");
         }
-        for (Map.Entry<String, Object> meta : metaTags().entrySet()) {
+        for (Map.Entry<Identifier, Object> meta : metaTags().entrySet()) {
             sb.append(meta.getKey())
                     .append(" = ")
                     .append(meta.getValue().toString())
@@ -47,11 +48,11 @@ public record QGPModule(
         }
         sb.append("--\n");
         sb.append("==Bosons\n");
-        for (Boson b : bosons()) {
+        for (BosonSpec b : bosonSpecs()) {
             sb.append(b.toString());
         }
         sb.append("==Quarks\n");
-        for (Quark q : quarks()) {
+        for (QuarkSpec q : quarks()) {
             sb.append(q.toString());
         }
         sb.append("==Instructions\n");
