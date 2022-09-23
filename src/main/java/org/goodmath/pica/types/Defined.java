@@ -37,12 +37,16 @@ public class Defined {
     }
 
     public enum DefKind {
-        Quark, Boson, Function, ImportAlias;
+        Quark, Boson, Function, ImportAlias
     }
 
     private final String name;
     public String getName() {
         return name;
+    }
+
+    public DefKind getKind() {
+        return kind;
     }
 
     private final AstNode definition;
@@ -62,6 +66,6 @@ public class Defined {
         }
     }
 
-    private DefKind kind;
+    private final DefKind kind;
 
 }

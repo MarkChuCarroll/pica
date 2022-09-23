@@ -15,7 +15,8 @@
 package org.goodmath.pica.ast.actions;
 
 import org.goodmath.pica.ast.exprs.Expr;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 import java.util.List;
 
@@ -32,8 +33,8 @@ public class ExprAction extends Action {
     }
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("Action::Expr",
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("Action::Expr",
             List.of(getExpr().getTree()));
     }
 

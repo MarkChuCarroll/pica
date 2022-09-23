@@ -13,7 +13,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-@Command(name = "picac", version = "0", mixinStandardHelpOptions = true)
+@Command(name = "compile", version = "0", mixinStandardHelpOptions = true)
 public class CompileCommand implements Runnable {
 
     @Option(names = { "-d", "--module-dir-path" },
@@ -40,7 +40,7 @@ public class CompileCommand implements Runnable {
         }
         for (PicaModule m: c.getParsedModules()) {
             System.out.println(">>>> Module " + m.getName());
-            System.out.println(m.toString());
+            System.out.println(m);
         }
 
     }

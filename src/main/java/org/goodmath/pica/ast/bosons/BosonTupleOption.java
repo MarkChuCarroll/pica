@@ -18,7 +18,9 @@ import java.util.List;
 
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPFieldNode;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 public class BosonTupleOption extends BosonOption {
         private final List<Type> fields;
@@ -33,11 +35,11 @@ public class BosonTupleOption extends BosonOption {
     }
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("BosonOption::Tuple",
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("BosonOption::Tuple",
             List.of(
-                new TagTree(getName()),
-                new TagTree("fields",
+                new PPFieldNode("optionName", getName()),
+                new PPTagNode("fields",
                     getFields().stream().map(Type::getTree).toList())));
     }
 

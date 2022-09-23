@@ -18,7 +18,8 @@ import java.util.List;
 
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 public abstract class Lvalue extends Expr {
 
@@ -41,9 +42,9 @@ public abstract class Lvalue extends Expr {
         }
 
         @Override
-        public TagTree getTree() {
-            return new TagTree("LValue::Indexed",
-                List.of(getContext().getTree(), new TagTree(getIndex())));
+        public PrettyPrintTree getTree() {
+            return new PPTagNode("LValue::Indexed",
+                List.of(getContext().getTree(), new PPTagNode(getIndex())));
         }
     }
 
@@ -58,8 +59,8 @@ public abstract class Lvalue extends Expr {
         }
 
         @Override
-        public TagTree getTree() {
-            return new TagTree("Lvalue::Identifier",
+        public PrettyPrintTree getTree() {
+            return new PPTagNode("Lvalue::Identifier",
                 List.of(getId().getTree()));
         }
     }

@@ -16,7 +16,9 @@ package org.goodmath.pica.ast;
 
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPFieldNode;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 import java.util.List;
 
@@ -39,9 +41,9 @@ public class TypedParameter extends AstNode {
     }
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("TypedParameter",
-            List.of(new TagTree(getName()), getType().getTree()));
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("TypedParameter",
+            List.of(new PPFieldNode("name", getName()), getType().getTree()));
 
     }
 }

@@ -1,9 +1,9 @@
 package org.goodmath.pica.ast.actions;
 
-import java.util.Collections;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPLeafNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 
 public class ExitAction extends Action {
@@ -13,7 +13,7 @@ public class ExitAction extends Action {
     }
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("Action::Exit", Collections.emptyList());
+    public PrettyPrintTree getTree() {
+        return new PPLeafNode("Action::Exit");
     }
 }

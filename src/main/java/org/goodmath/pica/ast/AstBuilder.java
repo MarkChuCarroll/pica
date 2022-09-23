@@ -140,7 +140,7 @@ public class AstBuilder implements PicaGrammarListener {
     public void exitModule(ModuleContext ctx) {
         var defs = ctx.definition().stream().map(d -> (Definition)getAstNodeFor(d)).toList();
         var uses = ctx.useDef().stream().map(u -> (UseDef)getAstNodeFor(u)).toList();
-        theModule = new PicaModule(moduleFile, uses, defs, Location.Unlocated);
+        theModule = new PicaModule(moduleFile, uses, defs, Location.NO_LOCATION);
     }
 
     @Override
@@ -538,6 +538,16 @@ public class AstBuilder implements PicaGrammarListener {
     }
 
     @Override
+    public void enterSpawnAction(PicaGrammarParser.SpawnActionContext ctx) {
+    }
+
+    @Override
+    public void exitSpawnAction(PicaGrammarParser.SpawnActionContext ctx) {
+        Action act = (Action)getAstNodeFor(ctx.action());
+        setAstNodeFor(ctx, new SpawnAction(act, loc(ctx)));
+    }
+
+    @Override
     public void enterIfAction(PicaGrammarParser.IfActionContext ctx) {
     }
 
@@ -644,7 +654,7 @@ public class AstBuilder implements PicaGrammarListener {
     @Override
     public void exitLitCharExpr(LitCharExprContext ctx) {
         var lit = ctx.LIT_CHAR().getText();
-        setAstNodeFor(ctx, new LiteralExpr(LiteralExpr.Kind.CHARLIT, lit, loc(ctx)));
+        setAstNodeFor(ctx, new LiteralExpr(LiteralExpr.Kind.CHAR_LIT, lit, loc(ctx)));
     }
 
     @Override
@@ -714,7 +724,7 @@ public class AstBuilder implements PicaGrammarListener {
     @Override
     public void exitLitIntExpr(LitIntExprContext ctx) {
         var v = ctx.LIT_INT().getText();
-        setAstNodeFor(ctx, new LiteralExpr(LiteralExpr.Kind.INTLIT, v, loc(ctx)));
+        setAstNodeFor(ctx, new LiteralExpr(LiteralExpr.Kind.INT_LIT, v, loc(ctx)));
     }
 
     @Override
@@ -724,7 +734,7 @@ public class AstBuilder implements PicaGrammarListener {
     @Override
     public void exitLitStrExpr(LitStrExprContext ctx) {
         var v = ctx.LIT_STRING().getText();
-        setAstNodeFor(ctx, new LiteralExpr(LiteralExpr.Kind.STRLIT, v, loc(ctx)));
+        setAstNodeFor(ctx, new LiteralExpr(LiteralExpr.Kind.STRING_LIT, v, loc(ctx)));
     }
 
     @Override
@@ -788,13 +798,24 @@ public class AstBuilder implements PicaGrammarListener {
     }
 
     @Override
+    public void enterNewChanExpr(PicaGrammarParser.NewChanExprContext ctx) {
+
+    }
+
+    @Override
+    public void exitNewChanExpr(PicaGrammarParser.NewChanExprContext ctx) {
+        Type t = (Type)getAstNodeFor(ctx.type());
+        setAstNodeFor(ctx, new NewChannelExpr(t, loc(ctx)));
+    }
+
+    @Override
     public void enterLitFloatExpr(LitFloatExprContext ctx) {
     }
 
     @Override
     public void exitLitFloatExpr(LitFloatExprContext ctx) {
         var v = ctx.LIT_FLOAT().getText();
-        setAstNodeFor(ctx, new LiteralExpr(LiteralExpr.Kind.FLOATLIT, v, loc(ctx)));
+        setAstNodeFor(ctx, new LiteralExpr(LiteralExpr.Kind.FLOAT_LIT, v, loc(ctx)));
     }
 
     @Override
@@ -897,6 +918,5 @@ public class AstBuilder implements PicaGrammarListener {
         setAstNodeFor(ctx, new ExitAction(loc(ctx)));
 
     }
-
 
 }

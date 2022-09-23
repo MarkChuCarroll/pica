@@ -9,7 +9,7 @@ import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.dfa.DFA;
 
 public class PicaErrorListener extends BaseErrorListener {
-    private String sourceFile;
+    private final String sourceFile;
     public PicaErrorListener(String sourceFile) {
         this.sourceFile = sourceFile;
     }

@@ -15,7 +15,9 @@
 package org.goodmath.pica.ast.exprs;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPLeafNode;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 import java.util.HashMap;
 import java.util.List;
@@ -78,11 +80,11 @@ public class BinaryExpr extends Expr {
 
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("Expr::Binary",
-            List.of(new TagTree(getOp().toString()),
-            getLeft().getTree(),
-            getRight().getTree()));
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("Expr::Binary",
+            List.of(new PPLeafNode(getOp().toString()),
+                    getLeft().getTree(),
+                    getRight().getTree()));
     }
 
 }

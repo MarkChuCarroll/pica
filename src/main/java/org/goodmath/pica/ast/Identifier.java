@@ -16,8 +16,11 @@ package org.goodmath.pica.ast;
 
 import lombok.EqualsAndHashCode;
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPLeafNode;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,7 +46,7 @@ public class Identifier extends AstNode {
     @Override
     public String toString() {
         if (getModule().isPresent()) {
-            return getModule().get().toString() + "::" + getName();
+            return getModule().get() + "::" + getName();
         } else {
             return getName();
         }
@@ -51,22 +54,26 @@ public class Identifier extends AstNode {
 
     public static Identifier parseIdentifier(String idStr) {
         String[] bits = idStr.split("::");
+        return fromList(List.of(bits));
+    }
+
+    public static Identifier fromList(List<String> bits) {
         Identifier current = null;
         for (String bit: bits) {
             current = new Identifier(Optional.ofNullable(current),
-                bit, Location.Unlocated);
+                bit, Location.NO_LOCATION);
         }
         return current;
     }
 
     @Override
-    public TagTree getTree() {
-        if (moduleId.isPresent()) {
-            return new TagTree("Identifier::Scoped",
+    public PrettyPrintTree getTree() {
+        if (getModule().isPresent()) {
+            return new PPTagNode("Identifier::Scoped",
                 List.of(getModule().get().getTree(),
-                    new TagTree(getName())));
+                    new PPLeafNode(getName())));
         } else {
-            return new TagTree("Identifier::Simple", List.of(new TagTree(getName())));
+            return new PPTagNode("Identifier::Simple", List.of(new PPLeafNode(getName())));
         }
     }
 

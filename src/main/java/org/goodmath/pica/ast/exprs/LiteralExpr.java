@@ -15,13 +15,15 @@
 package org.goodmath.pica.ast.exprs;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPLeafNode;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 import java.util.List;
 
 public class LiteralExpr extends Expr {
     public enum Kind {
-        STRLIT, INTLIT, FLOATLIT, CHARLIT, SYMLIT
+        STRING_LIT, INT_LIT, FLOAT_LIT, CHAR_LIT, SYM_LIT
     }
 
     private final Kind kind;
@@ -42,9 +44,9 @@ public class LiteralExpr extends Expr {
     }
 
     @Override
-    public TagTree getTree() {
-            return new TagTree("Expr::Literal::" + getKind().toString(),
-                    List.of(new TagTree(getValue())));
+    public PrettyPrintTree getTree() {
+            return new PPTagNode("Expr::Literal::" + getKind().toString(),
+                    List.of(new PPLeafNode(getValue())));
     }
 
 }

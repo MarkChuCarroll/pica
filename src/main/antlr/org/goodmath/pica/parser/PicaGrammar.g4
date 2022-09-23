@@ -33,18 +33,16 @@ definition:
 ;
 
 quarkDef:
-   'quark' (typeParamBlock)? ID  argSpec
-       ('composes' composes=typeList)?
-       ('channels'
-          channelDef+)?
-       ('state'
-          slotDef+)?
-       'action' action
-   'end'
+   'quark' (typeParamBlock)? ID  argSpec ('composes' composes=typeList)? 'is'
+      ( channelDef
+      | slotDef
+      )*
+      'do' action
+   'end' ('@quark')?
  ;
 
 slotDef:
-   'slot' ID ':' type '=' expr
+   'var' ID ':' type '=' expr
 ;
 
 channelDef:
@@ -69,7 +67,7 @@ typeList:
 ;
 
 funDef: // TODO
-   'fun' ID (typeParamBlock)? argSpec ':' type 'do' action 'end'
+   'fun' ID (typeParamBlock)? argSpec ':' type 'do' action 'end' ('@fun')?
 ;
 
 argSpec:
@@ -98,7 +96,7 @@ typeArgBlock:
  end
 */
 bosonDef:
-   'boson' (typeParamBlock)? ID 'is' bosonBody 'end'
+   'boson' (typeParamBlock)? ID 'is' bosonBody 'end' ('@boson')?
 ;
 
 
@@ -124,24 +122,25 @@ action:
   action ('|' action)+   # choiceAction
 | action (';' action)+   # sequenceAction
 | action ('&' action)+   # parAction
+| 'spawn' '(' action ')' # spawnAction
 | '(' action ')'      # parenAction
 | lvalue '=' expr     # assignAction
-| '!' ident  '(' expr ')' # sendAction
-| '?' ID 'do'
+| 'send' ident  '(' expr ')' # sendAction
+| 'receive' ID 'do'
         onClause+
-      'end'  # receiveAction
+      'end' ('@receive')?  # receiveAction
 | 'var' ID ':' type  '=' expr         # vardefStmt// variable definition.
-| 'if' cond=expr 'then' t=action 'else' f=action 'end'  # ifAction
-| 'while' expr 'do' action 'end'                  # whileAction
-| 'repeat' action 'end' # loopAction
-| 'for' ID 'in' expr 'do' action  'end'           # forAction
+| 'if' cond=expr 'then' t=action 'else' f=action 'end' ('@if')?  # ifAction
+| 'while' expr 'do' action 'end' ('@while')?                 # whileAction
+| 'repeat' action 'end' ('@repeat')? # loopAction
+| 'for' ID 'in' expr 'do' action  'end' ('@for')?           # forAction
 | 'return' expr                       # returnAction
 | expr                                # exprAction
 | 'exit'  # exitAction
 ;
 
 onClause:
-   'on' pattern 'do' action 'end'
+   'on' pattern 'do' action 'end' ('@on')?
 ;
 
 pattern:
@@ -169,7 +168,8 @@ lvalue:
 expr:
   // start a process; returns the process ID, which can be used for sending
   // messages to the process.
-  '^' type '(' (exprList)? ')'  # runExpr
+    'run' type '(' (exprList)? ')'  # runExpr
+  | 'newchan' type  # newChanExpr
   | l=expr op=('and' | 'or' ) r=expr  # logicExpr
   | l=expr op=('==' | '!=' | '>' | '>=' | '<' | '<=') r=expr  # compareExpr
   | l=expr op=('+' | '-'  )  r=expr  # addExpr
@@ -203,11 +203,11 @@ ident:
    (ID '::')* ID
 ;
 
-ID : [a-zA-Z_]+ [-a-zA-Z0-9_]*
+ID : [a-zA-Z_]+ [a-zA-Z0-9_]*
 ;
 
 LIT_SYMBOL:
-    '#' [a-zA-Z_]+ [-a-zA-Z0-9_]*
+    '#' [a-zA-Z_]+ [a-zA-Z0-9_]*
 ;
 
 LIT_STRING :  '"' (ESC | ~["\\])* '"' ;

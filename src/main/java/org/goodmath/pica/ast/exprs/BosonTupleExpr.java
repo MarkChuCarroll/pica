@@ -18,7 +18,8 @@ import java.util.List;
 
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 public class BosonTupleExpr extends Expr {
     private final Identifier tag;
@@ -39,10 +40,10 @@ public class BosonTupleExpr extends Expr {
     }
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("Expr::BosonTuple",
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("Expr::BosonTuple",
             List.of(getTag().getTree(),
-                new TagTree("fields",
+                new PPTagNode("fields",
                     getFields().stream().map(Expr::getTree).toList())));
 
     }

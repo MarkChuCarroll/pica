@@ -22,7 +22,9 @@ import org.goodmath.pica.ast.Definition;
 import org.goodmath.pica.ast.TypeParamSpec;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.types.Defined;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPLeafNode;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 public class BosonDef extends Definition {
 
@@ -44,17 +46,17 @@ public class BosonDef extends Definition {
     }
 
     @Override
-    public TagTree getTree() {
-        List<TagTree> children = new ArrayList<>();
-        children.add(new TagTree(getName()));
+    public PrettyPrintTree getTree() {
+        List<PrettyPrintTree> children = new ArrayList<>();
+        children.add(new PPLeafNode(getName()));
         getTypeParams().ifPresent(tps ->
-            children.add(new TagTree("typeParams",
+            children.add(new PPTagNode("typeParams",
                 tps.stream().map(TypeParamSpec::getTree).toList()
             )));
-        children.add(new TagTree("options",
+        children.add(new PPTagNode("options",
             getOptions().stream().map(BosonOption::getTree).toList()));
 
-        return new TagTree("Def::BosonDef",
+        return new PPTagNode("Def::BosonDef",
             children);
     }
 }

@@ -3,6 +3,7 @@ package org.goodmath.pica.compiler;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +22,7 @@ import org.goodmath.pica.parser.PicaGrammarLexer;
 import org.goodmath.pica.parser.PicaGrammarParser;
 import org.goodmath.pica.types.Defined;
 import org.goodmath.pica.types.ModuleScope;
+import org.goodmath.pica.types.RootScope;
 import org.goodmath.pica.types.Scope;
 
 public class PicaCompiler {
@@ -32,7 +34,7 @@ public class PicaCompiler {
     }
 
     public List<PicaModule> getParsedModules() {
-        return Scope.RootScope.getModules();
+        return RootScope.root.getModules();
     }
 
     private final ArrayDeque<Identifier> compileQueue = new ArrayDeque<Identifier>();
@@ -48,7 +50,7 @@ public class PicaCompiler {
     }
 
     public void readModule(Identifier module) throws IOException, PicaCompilationException {
-        if (!Scope.RootScope.includesModule(module)) {
+        if (!RootScope.root.includesModule(module)) {
             if (module.getModule().isPresent()) {
                 readModule(module.getModule().get());
             }
@@ -108,12 +110,32 @@ public class PicaCompiler {
                     scope.setDefinition(defined.getName(), defined);
                 }
             }
-            Scope.RootScope.setModule(id, scope);
+            RootScope.root.setModule(id, scope);
         } catch (RecognitionException re) {
             var loc = new SourceFileLocation(sourceFile.toString(), re.getOffendingToken().getLine(),
                     re.getOffendingToken().getCharPositionInLine());
             throw new PicaSyntaxException(re.toString(), loc);
         }
     }
+
+    public void typeCheckDefinition(Identifier id) throws PicaCompilationException {
+        Defined def = RootScope.root.getDefinition(id).orElseThrow(() ->
+                new PicaCompilationException("Definition of " + id + " not found"));
+        if (def.getKind() == Defined.DefKind.Quark) {
+            typeCheckQuarkDefinition(def.getDefinition(), Collections.emptyList());
+        }
+    }
+
+    /**
+     * Typecheck a definition.
+     * @param definition the definition to check
+     * @param typeArgs for the typeargs, if known. If this list is empty, then
+     *                new typevars will be generated for the definition for checking.
+     * @throws PicaCompilationException
+     */
+    private void typeCheckQuarkDefinition(Definition definition, List<TypeVar> typeArgs) throws PicaCompilationException {
+
+    }
+
 
 }

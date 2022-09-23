@@ -18,7 +18,8 @@ import java.util.List;
 
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 public class CreateQuarkExpr extends Expr {
     private final Type quarkType;
@@ -39,10 +40,10 @@ public class CreateQuarkExpr extends Expr {
     }
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("Expr::CreateQuark",
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("Expr::CreateQuark",
             List.of(getQuarkType().getTree(),
-                new TagTree("args",
+                new PPTagNode("args",
                     getArgs().stream().map(Expr::getTree).toList())));
     }
 

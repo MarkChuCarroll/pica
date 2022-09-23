@@ -15,7 +15,8 @@
 package org.goodmath.pica.ast.quarks;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 import java.util.List;
 import java.util.Map;
@@ -33,15 +34,15 @@ public class BosonStructPattern extends BosonPattern {
     }
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("BosonStructPattern",
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("BosonStructPattern",
             List.of(
-                new TagTree(getName()),
-                new TagTree("fields",
+                new PPTagNode(getName()),
+                new PPTagNode("fields",
                     getBosonFields().entrySet().stream().map(entry ->
-                       new TagTree("bosonField",
-                          List.of(new TagTree(entry.getKey()),
-                            new TagTree(entry.getValue())))).toList())));
+                            (PrettyPrintTree)new PPTagNode("bosonField",
+                                    List.of(new PPTagNode(entry.getKey()),
+                                            new PPTagNode(entry.getValue())))).toList())));
     }
 
 }

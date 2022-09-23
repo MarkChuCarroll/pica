@@ -15,18 +15,19 @@
 package org.goodmath.pica.ast;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 public class TempWrapper<T> extends AstNode {
     public TempWrapper(T wrapped) {
-        super(Location.Unlocated);
+        super(Location.NO_LOCATION);
         this.value = wrapped;
     }
 
     public T value;
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("INVALID");
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("INVALID");
     }
 }

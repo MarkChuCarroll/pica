@@ -16,7 +16,9 @@ package org.goodmath.pica.ast.actions;
 
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.quarks.BosonMessagePatternAction;
-import org.goodmath.pica.util.TagTree;
+import org.goodmath.pica.util.PPFieldNode;
+import org.goodmath.pica.util.PPTagNode;
+import org.goodmath.pica.util.PrettyPrintTree;
 
 import java.util.List;
 
@@ -39,10 +41,10 @@ public class ReceiveAction extends Action {
     }
 
     @Override
-    public TagTree getTree() {
-        return new TagTree("Action::Receive",
-            List.of(new TagTree(getChannel()),
-            new TagTree("patternActions",
+    public PrettyPrintTree getTree() {
+        return new PPTagNode("Action::Receive",
+            List.of(new PPFieldNode("channel", getChannel()),
+            new PPTagNode("patternActions",
                 getPatternActions().stream().map(BosonMessagePatternAction::getTree).toList()
             )
         ));
