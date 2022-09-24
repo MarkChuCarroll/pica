@@ -19,6 +19,12 @@ import org.goodmath.pica.ast.Pair;
 
 import java.util.List;
 
+/**
+ * A BosonSpec is the representation of a compiled hadron in
+ * a hadron file. It provides the name of the boson type,
+ * and a list of the alternatives shapes for the boson,
+ * with the types for each field.
+ */
 public record BosonSpec(
         String name,
         List<Pair<String, List<Identifier>>> options) {

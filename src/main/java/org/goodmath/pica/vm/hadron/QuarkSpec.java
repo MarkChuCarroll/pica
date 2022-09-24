@@ -21,6 +21,12 @@ import org.goodmath.pica.vm.CodeLocation;
 import java.util.List;
 
 /**
+ * A QuarkSpec is the representation of a compiled quark in
+ * a hadron file. It provides the names of the channels defined
+ * for the quark, the names of the slots defined in the quark's
+ * representation, and the entrypoint for the quark's action.
+ *
+ * TODO: also needs to have the constructor parameters.
  * @param channels name to channel type.
  * @param fields   map from name to type.
  */

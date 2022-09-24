@@ -21,7 +21,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The compiled form of a Pica module.
+ * A hadron: the compiled form of a Pica module. (In physics, a hadron is a composite particle
+ * formed by multiple quarks bound together with forces expressed by bosons.)
  */
 public record Hadron(
         Identifier id,

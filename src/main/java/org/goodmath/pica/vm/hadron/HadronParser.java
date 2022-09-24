@@ -12,27 +12,51 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.goodmath.pica.vm;
+package org.goodmath.pica.vm.hadron;
 
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.ErrorNode;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.ParseTreeProperty;
-import org.antlr.v4.runtime.tree.TerminalNode;
+import org.antlr.v4.runtime.tree.*;
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.Pair;
+import org.goodmath.pica.vm.*;
 import org.goodmath.pica.vm.QuarkPlasmaAssemblyParser.*;
-import org.goodmath.pica.vm.hadron.BosonSpec;
-import org.goodmath.pica.vm.hadron.Hadron;
-import org.goodmath.pica.vm.hadron.QuarkSpec;
 import org.goodmath.pica.vm.instructions.*;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class AssemblyParser implements QuarkPlasmaAssemblyListener {
+/**
+ * The parser for a hadron file.
+ */
+public class HadronParser implements QuarkPlasmaAssemblyListener {
+
+    public static Hadron parseHadron(String input) {
+        var stream = CharStreams.fromString(input);
+        return parse(stream);
+    }
+
+    public static Hadron parseHadronFile(File file) throws IOException {
+        var stream = CharStreams.fromFileName(file.getPath());
+        return parse(stream);
+    }
+
+    private static Hadron parse(CharStream stream) {
+        var lexer = new QuarkPlasmaAssemblyLexer(stream);
+        var tokens = new CommonTokenStream(lexer);
+        var parser = new QuarkPlasmaAssemblyParser(tokens);
+        var listener = new HadronParser();
+        var walker = new ParseTreeWalker();
+        walker.walk(listener, parser.module());
+        return listener.getModule();
+    }
+
 
     private final ParseTreeProperty<Object> values = new ParseTreeProperty<>();
 
