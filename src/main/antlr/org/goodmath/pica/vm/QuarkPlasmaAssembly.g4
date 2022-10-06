@@ -149,7 +149,7 @@ bnew:
 
 
 bset :
-   'bSet' tgt=reg ',' typeName=ident ',' field=LIT_INT ',' val=reg
+   'bSet' tgt=reg ',' typeName=ident ',' field=LIT_INT ',' value=reg
 
 ;
 
@@ -160,8 +160,12 @@ cnew:
 
 
 convert:
-   op=('iToF' | 'iToS' | 'fToI' | 'fToS' | 'sToI' | 'sToF') tgt=reg ',' src=reg
-
+   'iToF' tgt=reg ',' src=reg  # iToF
+| 'iToS' tgt=reg ',' src=reg # iToS
+| 'fToI' tgt=reg ',' src=reg # fToI
+| 'fToS' tgt=reg ',' src=reg # fToS
+| 'sToI' tgt=reg ',' src=reg # sToI
+| 'sToF' tgt=reg ',' src=reg # sToF
 ;
 
 eq:
@@ -169,13 +173,33 @@ eq:
 ;
 
 binop:
-   op=('iPlus' | 'iMinus' | 'iTimes' | 'iDiv' | 'iMod' | 'iGt' | 'iGe' | 'iLt' | 'iLe' |
-    'fPlus' | 'fMinus' | 'fTimes' | 'fDiv' | 'fGt' | 'fGe' | 'fLt' | 'fLe' |
-    'sCat' | 'sGt' | 'sGe' | 'sLt' | 'sLe' | 'sIdx'| 'and' | 'or')
-     tgt=reg ',' r1=reg ',' r2=reg
-
-
+  'iPlus'  tgt=reg ',' r1=reg ',' r2=reg  # iPlus
+| 'iMinus'  tgt=reg ',' r1=reg ',' r2=reg  # iMinus
+| 'iTimes'  tgt=reg ',' r1=reg ',' r2=reg  # iTimes
+| 'iDiv'  tgt=reg ',' r1=reg ',' r2=reg  # iDiv
+| 'iMod'  tgt=reg ',' r1=reg ',' r2=reg  # iMod
+| 'iGt'  tgt=reg ',' r1=reg ',' r2=reg   # iGt
+| 'iGe'  tgt=reg ',' r1=reg ',' r2=reg  # iGe
+| 'iLt'  tgt=reg ',' r1=reg ',' r2=reg   # iLt
+| 'iLe'  tgt=reg ',' r1=reg ',' r2=reg   # iLe
+| 'fPlus'  tgt=reg ',' r1=reg ',' r2=reg  # fPlus
+| 'fMinus'  tgt=reg ',' r1=reg ',' r2=reg  # fMinus
+| 'fTimes'  tgt=reg ',' r1=reg ',' r2=reg  # fTimes
+| 'fDiv'  tgt=reg ',' r1=reg ',' r2=reg  # fDiv
+| 'fGt'  tgt=reg ',' r1=reg ',' r2=reg   # fGt
+| 'fGe'  tgt=reg ',' r1=reg ',' r2=reg   # fGe
+| 'fLt'  tgt=reg ',' r1=reg ',' r2=reg   # fLt
+| 'fLe'  tgt=reg ',' r1=reg ',' r2=reg   # fLe
+| 'sCat'  tgt=reg ',' r1=reg ',' r2=reg  # sCat
+| 'sGt'  tgt=reg ',' r1=reg ',' r2=reg  # sGt
+| 'sGe' tgt=reg ',' r1=reg ',' r2=reg   # sGe
+| 'sLt'  tgt=reg ',' r1=reg ',' r2=reg   # sLt
+| 'sLe'  tgt=reg ',' r1=reg ',' r2=reg   # sLe
+| 'sIdx' tgt=reg ',' r1=reg ',' r2=reg   # sIdx
+| 'and'  tgt=reg ',' r1=reg ',' r2=reg   # and
+| 'or' tgt=reg ',' r1=reg ',' r2=reg   # or
 ;
+
 
 iNeg:
    'iNeg' tgt=reg ',' src=reg
@@ -208,7 +232,7 @@ qgets:
 ;
 
 qsets:
-   'qSetS' tgt=reg ',' qt=ident ',' name=ID ',' val=reg
+   'qSetS' tgt=reg ',' qt=ident ',' name=ID ',' value=reg
 ;
 
 qnew :

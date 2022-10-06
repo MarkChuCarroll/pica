@@ -27,9 +27,9 @@ useDef:
 ;
 
 definition:
-  quarkDef
-| flavorDef
-| bosonDef
+  quarkDef  # quarkDefChoice
+| flavorDef # flavorDefChoice
+| bosonDef # bosonDefChoice
 ;
 
 flavorDef:
@@ -52,7 +52,7 @@ slotDef:
 ;
 
 channelDef:
-    'chan' ID ':' type // must be a gluon type
+    'chan' ID ':' type
 ;
 
 
@@ -81,9 +81,8 @@ arg:
 ;
 
 type:
-   'chan' type # channelType
+   'chan' ( '(' ( i='in' | o='out' ) ')' )?  type # channelType
 |   ( typeArgBlock )? ident   # namedType
-|  'fun' '(' typeList? ')' '->' type  # funType
 ;
 
 typeArgBlock:
@@ -127,8 +126,8 @@ action:
 | 'spawn' '(' action ')' # spawnAction
 | '(' action ')'      # parenAction
 | lvalue '=' expr     # assignAction
-| 'send' ident  '(' expr ')' # sendAction
-| 'receive' ID 'do'
+| 'send' chan=expr  '(' value=expr ')' # sendAction
+| 'receive' chan=expr 'do'
         onClause+
       'end' ('@receive')?  # receiveAction
 | 'var' ID ':' type  '=' expr         # vardefStmt// variable definition.
@@ -136,8 +135,6 @@ action:
 | 'while' expr 'do' action 'end' ('@while')?                 # whileAction
 | 'repeat' action 'end' ('@repeat')? # loopAction
 | 'for' ID 'in' expr 'do' action  'end' ('@for')?           # forAction
-| 'return' expr                       # returnAction
-| expr                                # exprAction
 | 'exit'  # exitAction
 ;
 
@@ -168,8 +165,7 @@ lvalue:
 ;
 
 expr:
-  // start a process; returns the process ID, which can be used for sending
-  // messages to the process.
+  // start a process.
     'run' type '(' (exprList)? ')'  # runExpr
   | 'newchan' type  # newChanExpr
   | l=expr op=('and' | 'or' ) r=expr  # logicExpr
@@ -184,8 +180,10 @@ expr:
   | LIT_INT  # litIntExpr
   | LIT_FLOAT # litFloatExpr
   | LIT_CHAR # litCharExpr
-  | '[' exprList ']'  # listExpr
+  | type '[' exprList ']'  # listExpr
   | lvalue # lvalueExpr
+  | 'in' '(' expr  ')' # narrowChanToInExpr
+  | 'out' '(' expr ')' # narrowChanToOutExpr
 ;
 
 keyValueList:
