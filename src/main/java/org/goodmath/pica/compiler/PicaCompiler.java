@@ -3,7 +3,6 @@ package org.goodmath.pica.compiler;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,19 +10,20 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.goodmath.pica.ast.locations.SourceFileLocation;
-import org.goodmath.pica.errors.PicaCompilationException;
+import org.goodmath.pica.errors.ErrorLog;
+import org.goodmath.pica.errors.PicaCompilationError;
 import org.goodmath.pica.ast.AstBuilder;
 import org.goodmath.pica.ast.Definition;
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.PicaModule;
 import org.goodmath.pica.ast.UseDef;
-import org.goodmath.pica.errors.PicaSyntaxException;
+import org.goodmath.pica.errors.PicaSyntaxError;
 import org.goodmath.pica.parser.PicaGrammarLexer;
 import org.goodmath.pica.parser.PicaGrammarParser;
-import org.goodmath.pica.types.Defined;
+import org.goodmath.pica.types.DefinedName;
 import org.goodmath.pica.types.ModuleScope;
 import org.goodmath.pica.types.RootScope;
-import org.goodmath.pica.types.Scope;
+import org.goodmath.pica.types.TypeVar;
 
 public class PicaCompiler {
 
@@ -49,7 +49,7 @@ public class PicaCompiler {
         return null;
     }
 
-    public void readModule(Identifier module) throws IOException, PicaCompilationException {
+    public void readModule(Identifier module) throws IOException {
         if (!RootScope.root.includesModule(module)) {
             if (module.getModule().isPresent()) {
                 readModule(module.getModule().get());
@@ -59,17 +59,19 @@ public class PicaCompiler {
         }
     }
 
-    void readSourceFile(Identifier id, File sourceFile) throws PicaCompilationException {
+    void readSourceFile(Identifier id, File sourceFile)  {
         if (!sourceFile.getName().endsWith(".pica")) {
-            throw new PicaCompilationException("Source files must be named module.pica, but found '"
-                + sourceFile.getName() + "'");
+            ErrorLog.logError(new PicaCompilationError("Source files must be named module.pica, but found '"
+                + sourceFile.getName() + "'"));
+            return;
         }
 
         CharStream input;
         try {
             input = CharStreams.fromFileName(sourceFile.getPath());
         } catch (IOException e) {
-            throw new PicaCompilationException(String.format("File %s not found", sourceFile));
+            ErrorLog.logError(new PicaCompilationError(String.format("File %s not found", sourceFile)));
+            return;
         }
 
         // create a lexer that feeds off of input CharStream
@@ -78,13 +80,12 @@ public class PicaCompiler {
         // create a buffer of tokens pulled from the lexer
         var tokens = new CommonTokenStream(lexer);
 
-
         // create a parser that feeds off the tokens buffer
         var parser = new PicaGrammarParser(tokens);
         parser.removeErrorListeners();
         var errorListener = new PicaErrorListener(sourceFile.getPath());
         parser.addErrorListener(errorListener);
-        var treeBuilder = new AstBuilder(sourceFile.getName());
+        var treeBuilder = new AstBuilder(sourceFile.getName(), id);
 
         try {
             // Parse a module and generate an AST.
@@ -101,12 +102,12 @@ public class PicaCompiler {
             var scope = new ModuleScope(id, Optional.empty(), module);
             for (UseDef u: module.getUses()) {
                 compileQueue.push(u.getId());
-                for (Defined d: u.getDefinedNames()) {
+                for (DefinedName d: u.getDefinedNames()) {
                     scope.setDefinition(d.getName(), d);
                 }
             }
             for (Definition def : module.getDefinitions()) {
-                for (Defined defined : def.getDefinedNames()) {
+                for (DefinedName defined : def.getDefinedNames()) {
                     scope.setDefinition(defined.getName(), defined);
                 }
             }
@@ -114,16 +115,17 @@ public class PicaCompiler {
         } catch (RecognitionException re) {
             var loc = new SourceFileLocation(sourceFile.toString(), re.getOffendingToken().getLine(),
                     re.getOffendingToken().getCharPositionInLine());
-            throw new PicaSyntaxException(re.toString(), loc);
+            ErrorLog.logError(new PicaSyntaxError(re.toString(), loc));
         }
     }
 
-    public void typeCheckDefinition(Identifier id) throws PicaCompilationException {
-        Defined def = RootScope.root.getDefinition(id).orElseThrow(() ->
-                new PicaCompilationException("Definition of " + id + " not found"));
-        if (def.getKind() == Defined.DefKind.Quark) {
-            typeCheckQuarkDefinition(def.getDefinition(), Collections.emptyList());
-        }
+    public boolean typeCheckDefinition(Identifier id)  {
+//        Defined def = RootScope.root.getDefinition(id).orElseThrow(() ->
+//                new PicaCompilationError("Definition of " + id + " not found"));
+//        if (def.getKind() == Defined.DefKind.Quark) {
+//            typeCheckQuarkDefinition(def.getDefinition(), Collections.emptyList());
+//        }
+        return false;
     }
 
     /**
@@ -131,10 +133,10 @@ public class PicaCompiler {
      * @param definition the definition to check
      * @param typeArgs for the typeargs, if known. If this list is empty, then
      *                new typevars will be generated for the definition for checking.
-     * @throws PicaCompilationException
+     * @throws PicaCompilationError
      */
-    private void typeCheckQuarkDefinition(Definition definition, List<TypeVar> typeArgs) throws PicaCompilationException {
-
+    public boolean typeCheckQuarkDefinition(Definition definition, List<TypeVar> typeArgs) {
+        return false;
     }
 
 

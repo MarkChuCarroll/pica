@@ -16,8 +16,7 @@ package org.goodmath.pica.ast.actions;
 
 import org.goodmath.pica.ast.exprs.Expr;
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 import java.util.List;
 
@@ -34,9 +33,9 @@ public class ReturnAction extends Action {
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPTagNode("Action::Return",
-            List.of(getExpr().getTree()));
+    public Twist twist() {
+        return Twist.obj("Action::Return",
+            getExpr());
     }
 
 }

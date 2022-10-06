@@ -15,8 +15,7 @@
 package org.goodmath.pica.ast.types;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 import java.util.List;
 
@@ -33,8 +32,8 @@ public class ChannelType extends Type {
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPTagNode("Type:Channel",
-            List.of(getBosonType().getTree()));
+    public Twist twist() {
+        return Twist.obj("Type:Channel",
+            Twist.val("type", getBosonType()));
     }
 }

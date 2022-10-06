@@ -20,15 +20,13 @@ import java.util.Optional;
 
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
-import org.goodmath.pica.util.PPLeafNode;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 public class TypeParamSpec extends AstNode {
     private final String name;
-    private final Optional<Type> constraint;
+    private final List<Type> constraint;
 
-    public TypeParamSpec(String name, Optional<Type> constraint, Location loc) {
+    public TypeParamSpec(String name, List<Type> constraint, Location loc) {
         super(loc);
         this.name = name;
         this.constraint = constraint;
@@ -38,16 +36,23 @@ public class TypeParamSpec extends AstNode {
         return name;
     }
 
-    public Optional<Type> getConstraint() {
+    public List<Type> getConstraint() {
         return constraint;
     }
 
+    public boolean satisfiedBy(Type t) {
+        if (getConstraint().isEmpty()) {
+            return true;
+        } else {
+            //ConcreteDeclaredType concrete = new ConcreteDeclaredType(/, t);
+            return false;
+        }
+    }
+
     @Override
-    public PrettyPrintTree getTree() {
-        List<PrettyPrintTree> children = new ArrayList<>();
-        children.add(new PPLeafNode(getName()));
-        getConstraint().ifPresent(c ->
-            children.add(new PPTagNode("constraint", List.of(c.getTree()))));
-        return new PPTagNode("TypedParamSpec", children);
+    public Twist twist() {
+        return Twist.obj("TypeParamSpec",
+                Twist.attr("name", name),
+                Twist.arr("constraint", getConstraint()));
     }
 }

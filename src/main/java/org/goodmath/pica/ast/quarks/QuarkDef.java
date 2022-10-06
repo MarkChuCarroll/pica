@@ -14,19 +14,19 @@
  */
 package org.goodmath.pica.ast.quarks;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import org.goodmath.pica.ast.Definition;
+import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.TypeParamSpec;
 import org.goodmath.pica.ast.TypedParameter;
 import org.goodmath.pica.ast.actions.Action;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
-import org.goodmath.pica.types.Defined;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.types.DefinedName;
+import org.goodmath.pica.util.Twist;
 
 
 public class QuarkDef extends Definition {
@@ -36,15 +36,17 @@ public class QuarkDef extends Definition {
     private final List<SlotDef> slots;
     private final Action action;
 
-    public QuarkDef(String name,
-        Optional<List<TypeParamSpec>> typeParams,
-        List<TypedParameter> params,
-        List<Type> composes,
-        List<ChannelDef> channels,
-        List<SlotDef> slots,
-        Action action,
-        Location loc) {
-            super(name, typeParams, loc);
+    public QuarkDef(
+            Identifier moduleId,
+            String name,
+            Optional<List<TypeParamSpec>> typeParams,
+            List<TypedParameter> params,
+            List<Type> composes,
+            List<ChannelDef> channels,
+            List<SlotDef> slots,
+            Action action,
+            Location loc) {
+            super(moduleId, name, typeParams, loc);
             this.params = params;
             this.composes = composes;
             this.channels = channels;
@@ -74,23 +76,25 @@ public class QuarkDef extends Definition {
 
 
     @Override
-    public List<Defined> getDefinedNames() {
-        return List.of(Defined.quarkDefinition(getName(), this));
+    public List<DefinedName> getDefinedNames() {
+        return List.of(DefinedName.quarkDefinition(getName(), this));
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        List<PrettyPrintTree> children = new ArrayList<>();
-        getTypeParams().ifPresent(tps -> children.add(new PPTagNode("typeParams",
-            tps.stream().map(TypeParamSpec::getTree).toList())));
-        children.add(new PPTagNode("params",
-            getParams().stream().map(TypedParameter::getTree).toList()));
-        children.add(new PPTagNode("channels",
-            getChannels().stream().map(ChannelDef::getTree).toList()));
-        children.add(new PPTagNode("slots",
-            getSlots().stream().map(SlotDef::getTree).toList()));
-        children.add(action.getTree());
-        return new PPTagNode("Def::Quark",
-            children);
+    public boolean validate() {
+        return false;
     }
+
+    @Override
+    public Twist twist() {
+        return Twist.obj("Def::Quark",
+                Twist.attr("name", getName()),
+                Twist.arr("typeParams", getTypeParams().orElse(Collections.emptyList())),
+                Twist.arr("params", getParams()),
+                Twist.arr("channels", getChannels()),
+                Twist.arr("slots", getSlots()),
+                Twist.val("action", getAction()));
+    }
+
+
 }

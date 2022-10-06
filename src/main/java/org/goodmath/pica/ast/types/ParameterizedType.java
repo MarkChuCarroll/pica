@@ -17,8 +17,7 @@ package org.goodmath.pica.ast.types;
 import java.util.List;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 public class ParameterizedType extends Type {
     private final NamedType base;
@@ -38,12 +37,26 @@ public class ParameterizedType extends Type {
         return params;
     }
 
+    /**
+     * Check that a parameterized type instantiated with these type args are valid.
+     *
+     * An instantiated parameterized type is valid if:
+     * <ol>
+     *     <li> It has the correct number of type arguments.</li>
+     *     <li> Each type argument satisfies any constraints required by that
+     *        type argument.</li>
+     * </ol>
+     * @return bool if the type is valid. If it isn't valid, errors should be appended
+     * to the log in @see{}PicaComplicationError}.
+     */
+    public boolean validate() {
+        return false;
+    }
+
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPTagNode("Type::Parameterized",
-            List.of(
-                new PPTagNode("typeParams",
-                    getParams().stream().map(Type::getTree).toList()),
-                getBase().getTree()));
+    public Twist twist() {
+        return Twist.obj("Type::Parameterized",
+                Twist.val("baseType", getBase()),
+                Twist.arr("typeArgs", getParams()));
     }
 }

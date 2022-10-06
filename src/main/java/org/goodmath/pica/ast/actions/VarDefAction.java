@@ -17,11 +17,9 @@ package org.goodmath.pica.ast.actions;
 import org.goodmath.pica.ast.exprs.Expr;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
-import org.goodmath.pica.util.PPFieldNode;
-import org.goodmath.pica.util.PPTagNode;
 
 import lombok.Getter;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 import java.util.List;
 
@@ -39,12 +37,10 @@ public class VarDefAction extends Action {
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPTagNode("Action::VarDef",
-            List.of(
-                    new PPFieldNode("var", getName()),
-                    getType().getTree(),
-                    getValue().getTree()));
-
+    public Twist twist() {
+        return Twist.obj("Action::VarDef",
+                Twist.attr("var", getName()),
+                Twist.val("type", getType()),
+                Twist.val("initValue", getValue()));
     }
 }

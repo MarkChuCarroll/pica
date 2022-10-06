@@ -18,8 +18,7 @@ package org.goodmath.pica.ast.quarks;
 import org.goodmath.pica.ast.AstNode;
 import org.goodmath.pica.ast.actions.Action;
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 import java.util.List;
 
@@ -42,9 +41,10 @@ public class BosonMessagePatternAction extends AstNode {
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPTagNode("BosonMessagePatternAction",
-            List.of(getPattern().getTree(), getAction().getTree()));
+    public Twist twist() {
+        return Twist.obj("BosonMessagePatternAction",
+            Twist.val("pattern", getPattern()),
+            Twist.val("action", getAction()));
     }
 }
 

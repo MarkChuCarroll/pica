@@ -18,11 +18,12 @@ import java.util.List;
 import java.util.Optional;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.types.Defined;
+import org.goodmath.pica.types.DefinedName;
 
 public abstract class Definition extends AstNode {
     private final String name;
     private final Optional<List<TypeParamSpec>> typeParams;
+    private final Identifier module;
 
     public Optional<List<TypeParamSpec>> getTypeParams() {
         return typeParams;
@@ -32,11 +33,31 @@ public abstract class Definition extends AstNode {
         return name;
     }
 
-    public Definition(String name, Optional<List<TypeParamSpec>> typeParams, Location loc) {
+    public Definition(Identifier module, String name, Optional<List<TypeParamSpec>> typeParams, Location loc) {
         super(loc);
+        this.module = module;
         this.name = name;
         this.typeParams = typeParams;
     }
 
-    public abstract List<Defined> getDefinedNames();
+    public abstract List<DefinedName> getDefinedNames();
+
+
+    /**
+     * Check that this definition is valid. A definition is invalid if:
+     * <ul>
+     *     <li> (undefined type var error) It uses an undefined type variable anywhere in its definition.</li>
+     *     <li> (category error) It uses a type that doesn't match a language requirement. For example,
+     *       if a boson type is listed in the composes list of a quark, that's violating teh language
+     *       requirement that all types in the compose list of a quark be quark types.
+     *       </li>
+     * </ul>
+     * @return true if the definition is valid. If the definition isn't valid, then errors
+     *    describing the problem should have been logged to PicaCompilationError.
+     */
+    public abstract boolean validate();
+
+    public Identifier getModule() {
+        return module;
+    }
 }

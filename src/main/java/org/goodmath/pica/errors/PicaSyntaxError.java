@@ -14,10 +14,9 @@
  */
 package org.goodmath.pica.errors;
 
-public class PicaCompilationException extends Exception {
-
-    public PicaCompilationException(String msg) {
-        super(msg);
+import org.goodmath.pica.ast.locations.Location;
+public class PicaSyntaxError extends PicaCompilationError {
+    public PicaSyntaxError(String msg, Location loc) {
+        super(String.format("Syntax error at %s: %s", msg, loc));
     }
-
 }

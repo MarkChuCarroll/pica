@@ -18,9 +18,7 @@ import org.goodmath.pica.ast.AstNode;
 import org.goodmath.pica.ast.exprs.Expr;
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
-import org.goodmath.pica.util.PPFieldNode;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 import java.util.List;
 
@@ -49,10 +47,10 @@ public class SlotDef extends AstNode {
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPTagNode("SlotDef",
-            List.of(new PPFieldNode("name", getName()),
-                getType().getTree(),
-                getInitValue().getTree()));
+    public Twist twist() {
+        return Twist.obj("SlotDef",
+            Twist.attr("name", getName()),
+            Twist.val("type", getType()),
+            Twist.val("initValue", getInitValue()));
     }
 }

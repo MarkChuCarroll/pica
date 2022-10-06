@@ -14,7 +14,7 @@
  */
 package org.goodmath.pica;
 
-import org.goodmath.pica.cli.CompileCommand;
+import org.goodmath.pica.compiler.cli.CompileCommand;
 
 import picocli.CommandLine;
 

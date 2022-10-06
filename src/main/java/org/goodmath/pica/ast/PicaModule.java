@@ -17,9 +17,7 @@ package org.goodmath.pica.ast;
 import java.util.List;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.PPFieldNode;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 public class PicaModule extends AstNode {
     public PicaModule(String name, List<UseDef> useDefs, List<Definition> defs, Location loc) {
@@ -47,15 +45,11 @@ public class PicaModule extends AstNode {
 
 
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPTagNode("PicaModule",
-            List.of(
-                new PPFieldNode("name", getName()),
-                new PPTagNode("uses",
-                    getUses().stream().map(UseDef::getTree).toList()),
-                new PPTagNode("defs",
-                    getDefinitions().stream().map(Definition::getTree).toList())));
-
+    public Twist twist() {
+        return Twist.obj("PicaModule",
+            Twist.attr("name", getName()),
+            Twist.arr("uses", getUses()),
+            Twist.arr("defs", getDefinitions()));
     }
 
 }

@@ -17,8 +17,7 @@ package org.goodmath.pica.ast.actions;
 import java.util.List;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 public class ChoiceAction extends Action {
     private final List<Action> options;
@@ -33,9 +32,9 @@ public class ChoiceAction extends Action {
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPTagNode("Action::Choice",
-            getOptions().stream().map(Action::getTree).toList());
+    public Twist twist() {
+        return Twist.obj("Action::Choice",
+                Twist.arr("options", getOptions()));
     }
 
 }

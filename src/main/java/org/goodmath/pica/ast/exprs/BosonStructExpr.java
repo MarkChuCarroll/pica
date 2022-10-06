@@ -19,9 +19,7 @@ import java.util.Map;
 
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.PPFieldNode;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 public class BosonStructExpr extends Expr {
     private final Identifier tag;
@@ -42,14 +40,12 @@ public class BosonStructExpr extends Expr {
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPTagNode("BosonStructExpr",
-            List.of(getTag().getTree(),
-                new PPTagNode("fields",
+    public Twist twist() {
+        return Twist.obj("BosonStructExpr",
+                Twist.attr("id", getTag().toString()),
+                Twist.arr("fields",
                     getFields().entrySet().stream().map(entry ->
-                            (PrettyPrintTree)new PPTagNode("field",
-                            List.of(new PPFieldNode("name", entry.getKey()),
-                                entry.getValue().getTree()))).toList())));
+                            Twist.val(entry.getKey(), entry.getValue())).toList()));
     }
 
 }

@@ -16,8 +16,7 @@ package org.goodmath.pica.ast.actions;
 
 import org.goodmath.pica.ast.exprs.Expr;
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 import java.util.List;
 
@@ -40,9 +39,10 @@ public class WhileAction extends Action {
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPTagNode("Action::While",
-            List.of(getCond().getTree(), getBody().getTree()));
+    public Twist twist() {
+        return Twist.obj("Action::While",
+                Twist.val("cond", getCond()),
+            Twist.val("body", getBody()));
     }
 
 }

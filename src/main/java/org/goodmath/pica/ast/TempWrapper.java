@@ -15,8 +15,7 @@
 package org.goodmath.pica.ast;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 public class TempWrapper<T> extends AstNode {
     public TempWrapper(T wrapped) {
@@ -27,7 +26,7 @@ public class TempWrapper<T> extends AstNode {
     public T value;
 
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPTagNode("INVALID");
+    public Twist twist() {
+        return Twist.obj("INVALID");
     }
 }

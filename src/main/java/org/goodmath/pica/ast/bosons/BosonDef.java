@@ -14,25 +14,24 @@
  */
 package org.goodmath.pica.ast.bosons;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import org.goodmath.pica.ast.Definition;
+import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.TypeParamSpec;
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.types.Defined;
-import org.goodmath.pica.util.PPLeafNode;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.types.DefinedName;
+import org.goodmath.pica.util.Twist;
 
 public class BosonDef extends Definition {
 
     private final List<BosonOption> options;
 
-    public BosonDef(String name, Optional<List<TypeParamSpec>> typeParams,
+    public BosonDef(Identifier moduleId, String name, Optional<List<TypeParamSpec>> typeParams,
                     List<BosonOption> options, Location loc) {
-                super(name, typeParams, loc);
+                super(moduleId, name, typeParams, loc);
                 this.options = options;
     }
 
@@ -41,22 +40,20 @@ public class BosonDef extends Definition {
     }
 
     @Override
-    public List<Defined> getDefinedNames() {
-        return List.of(Defined.bosonDefinition(getName(), this));
+    public List<DefinedName> getDefinedNames() {
+        return List.of(DefinedName.bosonDefinition(getName(), this));
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        List<PrettyPrintTree> children = new ArrayList<>();
-        children.add(new PPLeafNode(getName()));
-        getTypeParams().ifPresent(tps ->
-            children.add(new PPTagNode("typeParams",
-                tps.stream().map(TypeParamSpec::getTree).toList()
-            )));
-        children.add(new PPTagNode("options",
-            getOptions().stream().map(BosonOption::getTree).toList()));
+    public boolean validate() {
+        return false;
+    }
 
-        return new PPTagNode("Def::BosonDef",
-            children);
+    @Override
+    public Twist twist() {
+        return Twist.obj("Boson",
+                Twist.attr("name", getName()),
+                Twist.arr("typeParams", getTypeParams().orElse(Collections.emptyList())),
+                Twist.arr("options", getOptions()));
     }
 }

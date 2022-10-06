@@ -46,8 +46,6 @@ import org.goodmath.pica.parser.PicaGrammarParser.CompareExprContext;
 import org.goodmath.pica.parser.PicaGrammarParser.DefinitionContext;
 import org.goodmath.pica.parser.PicaGrammarParser.DotLvalueContext;
 import org.goodmath.pica.parser.PicaGrammarParser.ExprListContext;
-import org.goodmath.pica.parser.PicaGrammarParser.FunCallExprContext;
-import org.goodmath.pica.parser.PicaGrammarParser.FunDefContext;
 import org.goodmath.pica.parser.PicaGrammarParser.FunTypeContext;
 import org.goodmath.pica.parser.PicaGrammarParser.IdListContext;
 import org.goodmath.pica.parser.PicaGrammarParser.IdentContext;
@@ -94,13 +92,15 @@ import java.util.Optional;
 
 public class AstBuilder implements PicaGrammarListener {
 
-    public AstBuilder(String moduleFileName) {
+    public AstBuilder(String moduleFileName, Identifier module) {
         this.moduleFile = moduleFileName;
+        this.moduleName = module;
     }
 
     private final ParseTreeProperty<AstNode> values = new ParseTreeProperty<>();
 
     private final String moduleFile;
+    private final Identifier moduleName;
 
     private PicaModule theModule = null;
 
@@ -151,7 +151,7 @@ public class AstBuilder implements PicaGrammarListener {
     public void exitUseDef(UseDefContext ctx) {
         var usedModule =  (Identifier)getAstNodeFor(ctx.ident());
         var usedNames = ctx.ID().stream().map(ParseTree::getText).toList();
-        setAstNodeFor(ctx, new UseDef(usedModule, usedNames, loc(ctx)));
+        setAstNodeFor(ctx, new UseDef(moduleName, usedModule, usedNames, loc(ctx)));
     }
 
     @Override
@@ -162,14 +162,31 @@ public class AstBuilder implements PicaGrammarListener {
     public void exitDefinition(DefinitionContext ctx) {
         if (ctx.quarkDef() != null) {
             setAstNodeFor(ctx, getAstNodeFor(ctx.quarkDef()));
-        } else if (ctx.funDef() != null) {
-            setAstNodeFor(ctx, getAstNodeFor(ctx.funDef()));
         } else if (ctx.bosonDef() != null) {
             setAstNodeFor(ctx, getAstNodeFor(ctx.bosonDef()));
         } else {
             throw new RuntimeException("Invalid definition");
         }
 
+    }
+
+    @Override
+    public void enterFlavorDef(PicaGrammarParser.FlavorDefContext ctx) {
+
+    }
+
+    @Override
+    public void exitFlavorDef(PicaGrammarParser.FlavorDefContext ctx) {
+        Optional<List<TypeParamSpec>> typeParams =
+                Optional.ofNullable(ctx.typeParamBlock()).map(tp ->
+                        ((TempWrapper<List<TypeParamSpec>>)getAstNodeFor(tp)).value);
+        String name = ctx.ID().getText();
+        List<Type> composes = Optional.ofNullable(ctx.composes)
+                .map(c -> ((TempWrapper<List<Type>>)getAstNodeFor(c)).value)
+                .orElse(Collections.emptyList());
+
+        List<ChannelDef> channels = ctx.channelDef().stream().map(c -> (ChannelDef)getAstNodeFor(c)).toList();
+        setAstNodeFor(ctx, new FlavorDef(moduleName, name, typeParams, composes, channels, loc(ctx)));
     }
 
     @Override
@@ -189,7 +206,7 @@ public class AstBuilder implements PicaGrammarListener {
         var action = (Action)getAstNodeFor(ctx.action());
         var slots = ctx.slotDef().stream().map(s -> (SlotDef)getAstNodeFor(s)).toList();
         var params = ((TempWrapper<List<TypedParameter>>)getAstNodeFor(ctx.argSpec())).value;
-        setAstNodeFor(ctx, new QuarkDef(name, typeParams, params, composes, channels, slots, action, loc(ctx)));
+        setAstNodeFor(ctx, new QuarkDef(moduleName, name, typeParams, params, composes, channels, slots, action, loc(ctx)));
     }
 
     @Override
@@ -306,9 +323,8 @@ public class AstBuilder implements PicaGrammarListener {
     @Override
     public void exitTypeParamSpec(TypeParamSpecContext ctx) {
         var name = ctx.ID().getText();
-        var constraint = Optional.ofNullable(ctx.type()).map(
-                c -> (Type)getAstNodeFor(c)
-        );
+        var constraint = Optional.ofNullable(ctx.typeList()).map(
+                c -> ((TempWrapper<List<Type>>)getAstNodeFor(c)).value).orElse(Collections.emptyList());
         setAstNodeFor(ctx, new TypeParamSpec(name, constraint, loc(ctx)));
     }
 
@@ -320,22 +336,6 @@ public class AstBuilder implements PicaGrammarListener {
     public void exitTypeList(TypeListContext ctx) {
         var types = ctx.type().stream().map(t -> (Type)getAstNodeFor(t)).toList();
         setAstNodeFor(ctx, new TempWrapper<>(types));
-    }
-
-    @Override
-    public void enterFunDef(FunDefContext ctx) {
-    }
-
-    @Override
-    public void exitFunDef(FunDefContext ctx) {
-        var id = ctx.ID().getText();
-        var typeParams =
-                Optional.ofNullable(ctx.typeParamBlock()).map(b ->
-                        ((TempWrapper<List<TypeParamSpec>>)getAstNodeFor(b)).value);
-        var args = ((TempWrapper<List<TypedParameter>>)getAstNodeFor(ctx.argSpec())).value;
-        var resultType = (Type)getAstNodeFor(ctx.type());
-        var body = (Action)getAstNodeFor(ctx.action());
-        setAstNodeFor(ctx, new FunctionDef(id, typeParams, args,resultType, body, loc(ctx)));
     }
 
     @Override
@@ -415,7 +415,7 @@ public class AstBuilder implements PicaGrammarListener {
                 ((TempWrapper<List<TypeParamSpec>>)getAstNodeFor(tb)).value);
         var name = ctx.ID().getText();
         var options = ((TempWrapper<List<BosonOption>>)getAstNodeFor(ctx.bosonBody())).value;
-        setAstNodeFor(ctx, new BosonDef(name, typeParams, options, loc(ctx)));
+        setAstNodeFor(ctx, new BosonDef(moduleName, name, typeParams, options, loc(ctx)));
     }
 
     @Override
@@ -735,17 +735,6 @@ public class AstBuilder implements PicaGrammarListener {
     public void exitLitStrExpr(LitStrExprContext ctx) {
         var v = ctx.LIT_STRING().getText();
         setAstNodeFor(ctx, new LiteralExpr(LiteralExpr.Kind.STRING_LIT, v, loc(ctx)));
-    }
-
-    @Override
-    public void enterFunCallExpr(FunCallExprContext ctx) {
-    }
-
-    @Override
-    public void exitFunCallExpr(FunCallExprContext ctx) {
-        var target = (Expr)getAstNodeFor(ctx.expr());
-        var args = ((TempWrapper<List<Expr>>)getAstNodeFor(ctx.exprList())).value;
-        setAstNodeFor(ctx, new CallExpr(target, args, loc(ctx)));
     }
 
     @Override

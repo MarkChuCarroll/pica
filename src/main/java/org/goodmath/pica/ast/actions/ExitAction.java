@@ -2,8 +2,7 @@ package org.goodmath.pica.ast.actions;
 
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.PPLeafNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 
 public class ExitAction extends Action {
@@ -13,7 +12,7 @@ public class ExitAction extends Action {
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPLeafNode("Action::Exit");
+    public Twist twist() {
+        return Twist.obj("Action::Exit");
     }
 }

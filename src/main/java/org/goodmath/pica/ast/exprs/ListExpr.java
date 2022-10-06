@@ -17,8 +17,7 @@ package org.goodmath.pica.ast.exprs;
 import java.util.List;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 public class ListExpr extends Expr {
     private final List<Expr> values;
@@ -33,9 +32,9 @@ public class ListExpr extends Expr {
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPTagNode("Expr::List",
-            getValues().stream().map(Expr::getTree).toList());
+    public Twist twist() {
+        return Twist.obj("Expr::List",
+            Twist.arr("values", values));
     }
 
 }

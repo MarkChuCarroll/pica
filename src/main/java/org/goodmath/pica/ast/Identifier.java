@@ -16,11 +16,8 @@ package org.goodmath.pica.ast;
 
 import lombok.EqualsAndHashCode;
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.PPLeafNode;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,14 +64,10 @@ public class Identifier extends AstNode {
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        if (getModule().isPresent()) {
-            return new PPTagNode("Identifier::Scoped",
-                List.of(getModule().get().getTree(),
-                    new PPLeafNode(getName())));
-        } else {
-            return new PPTagNode("Identifier::Simple", List.of(new PPLeafNode(getName())));
-        }
+    public Twist twist() {
+        return Twist.obj("Identifier",
+                Twist.attr("name", toString()));
+
     }
 
 

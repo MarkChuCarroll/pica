@@ -16,9 +16,10 @@ package org.goodmath.pica.ast;
 
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
+import org.goodmath.pica.util.Twistable;
 
-public abstract class AstNode {
+public abstract class AstNode implements Twistable {
     private final Location location;
 
     public Location getLocation() {
@@ -29,11 +30,9 @@ public abstract class AstNode {
         this.location = loc;
     }
 
-    public abstract PrettyPrintTree getTree();
-
 
     public String toString() {
-        return getTree().toString();
+        return twist().toString();
     }
 
 }

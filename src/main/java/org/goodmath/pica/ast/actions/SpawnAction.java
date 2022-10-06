@@ -1,8 +1,7 @@
 package org.goodmath.pica.ast.actions;
 
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 import java.util.List;
 
@@ -19,8 +18,8 @@ public class SpawnAction extends Action {
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPTagNode("Action::Spawn",
-                List.of(action.getTree()));
+    public Twist twist() {
+        return Twist.obj("Action::Spawn",
+                action);
     }
 }

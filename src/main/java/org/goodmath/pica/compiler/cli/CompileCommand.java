@@ -1,4 +1,4 @@
-package org.goodmath.pica.cli;
+package org.goodmath.pica.compiler.cli;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,7 +7,7 @@ import java.util.List;
 import org.goodmath.pica.ast.Identifier;
 import org.goodmath.pica.ast.PicaModule;
 import org.goodmath.pica.compiler.PicaCompiler;
-import org.goodmath.pica.errors.PicaCompilationException;
+import org.goodmath.pica.errors.PicaCompilationError;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -32,9 +32,6 @@ public class CompileCommand implements Runnable {
                c.readModule(Identifier.parseIdentifier(moduleName));
             } catch (IOException e) {
                 System.err.printf("IO error reading module %s\n", moduleName);
-                System.exit(1);
-            } catch (PicaCompilationException e) {
-                System.err.println(e.getMessage());
                 System.exit(1);
             }
         }

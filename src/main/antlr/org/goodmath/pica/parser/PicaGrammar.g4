@@ -28,8 +28,14 @@ useDef:
 
 definition:
   quarkDef
+| flavorDef
 | bosonDef
-| funDef
+;
+
+flavorDef:
+   'flavor' (typeParamBlock)? ID ('composes' composes=typeList)? 'is'
+      channelDef*
+   'end' ('@flavor')?
 ;
 
 quarkDef:
@@ -59,15 +65,11 @@ typeParamBlock:
 ;
 
 typeParamSpec:
-   ID ( '<' type )?
+   ID ( '<' '(' typeList ')' )?
 ;
 
 typeList:
    type ( ',' type )*
-;
-
-funDef: // TODO
-   'fun' ID (typeParamBlock)? argSpec ':' type 'do' action 'end' ('@fun')?
 ;
 
 argSpec:
@@ -175,7 +177,6 @@ expr:
   | l=expr op=('+' | '-'  )  r=expr  # addExpr
   | l=expr op=('*' | '/' | '%') r=expr  # multExpr
   | op=('not' | '-' ) expr  # negateExpr
-  | expr '(' exprList? ')' # funCallExpr
   | '(' expr ')' # parenExpr
   | ident '(' exprList ')' # bosonTupleExpr
   | ident '{' keyValueList '}' # bosonStructExpr

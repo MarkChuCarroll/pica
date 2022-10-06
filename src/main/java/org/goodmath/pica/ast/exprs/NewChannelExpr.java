@@ -4,8 +4,7 @@ import java.util.List;
 
 import org.goodmath.pica.ast.locations.Location;
 import org.goodmath.pica.ast.types.Type;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 public class NewChannelExpr extends Expr {
     private final Type type;
@@ -20,9 +19,9 @@ public class NewChannelExpr extends Expr {
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPTagNode("Expr::NewChannel",
-            List.of(getType().getTree()));
+    public Twist twist() {
+        return Twist.obj("Expr::NewChannel",
+                Twist.val("type", getType()));
     }
 
 }

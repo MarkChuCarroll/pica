@@ -17,8 +17,7 @@ package org.goodmath.pica.ast.actions;
 import org.goodmath.pica.ast.exprs.Expr;
 import org.goodmath.pica.ast.exprs.Lvalue;
 import org.goodmath.pica.ast.locations.Location;
-import org.goodmath.pica.util.PPTagNode;
-import org.goodmath.pica.util.PrettyPrintTree;
+import org.goodmath.pica.util.Twist;
 
 import java.util.List;
 
@@ -41,9 +40,10 @@ public class AssignmentAction extends Action {
     }
 
     @Override
-    public PrettyPrintTree getTree() {
-        return new PPTagNode("Action::Assignment",
-            List.of(getTarget().getTree(), getValue().getTree()));
+    public Twist twist() {
+        return Twist.obj("Action::Assignment",
+            Twist.val("target", getTarget()),
+            Twist.val("value", getValue()));
     }
 
 }
