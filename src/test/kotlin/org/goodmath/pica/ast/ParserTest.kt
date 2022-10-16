@@ -2,6 +2,7 @@ package org.goodmath.pica.ast
 
 import org.antlr.v4.runtime.CharStreams
 import org.goodmath.pica.parser.AstParser
+import org.goodmath.pica.util.Twist
 
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -9,7 +10,7 @@ import kotlin.test.assertEquals
 
 class ParserTest {
 
-    fun parse(input: String): PicaModule {
+    fun parse(input: String): HadronDefinition {
         val parser = AstParser("test")
         return parser.parse(CharStreams.fromString(input))
     }
@@ -18,65 +19,69 @@ class ParserTest {
     @Test
     fun testParseQuark() {
         val input: String = """
-            quark [T]MyQuark(i: Int) composes a::b is
+            quark [T]MyQuark composes a::b
+                            args (i: Int) is
                 chan C : F
-                var sl: Int = i
-                 do
+                  slot sl: Int = i
+               do 
                     send C(Flubber(23 + x))
-            end@quark
+               end@quark
         """.trimIndent()
-        val expected: String = """
-            obj PicaModule:
-               id = test
-               defs = array:
-                  obj Definition::Quark:
-                     module = test
-                     name = MyQuark
-                     typeParams = array:
-                        obj TypeVar:
-                           name = T
-                     valueParams = array:
-                        obj param:
-                           name = i
-                           type:
-                              obj Type::Named:
-                                 id = Int
-                     channels = array:
-                        obj Definition::Channel:
-                           name = C
-                           messageType:
-                              obj Type::Named:
-                                 id = F
-                     slots = array:
-                        obj Object::Slot:
-                           name = sl
-                           type:
-                              obj Type::Named:
-                                 id = Int
-                           initValue:
-                              obj Expr::LVal::Id:
-                                 id = i
-                     actions = array:
-                        obj Action::Send:
-                           channel:
-                              obj Expr::LVal::Id:
-                                 id = C
-                           message:
-                              obj Expr::Boson::Tuple:
-                                 name = Flubber
-                                 fields = array:
-                                    obj Expr::Operator:
-                                       operator = Plus
-                                       operands = array:
-                                          obj Expr::Literal:
-                                             kind = IntLit
-                                             value = 23
-                                          obj Expr::LVal::Id:
-                                             id = x
 
-        """.trimIndent()
+        val expected =
+            Twist.obj("HadronDefinition",
+                Twist.attr("id", "test"),
+                Twist.arr("defs",
+                    Twist.obj("Def::Quark",
+                        Twist.attr("hadron", "test"),
+                        Twist.attr("name", "$<MyQuark>"),
+                        Twist.arr("typeParams",
+                            Twist.obj("Type::TypeVar",
+                                Twist.attr("name", "$<T>"))),
+                        Twist.arr("valueParams",
+                            Twist.obj("Param::TypedId",
+                                Twist.attr("name", "$<i>"),
+                                        Twist.value("type",
+                                            Twist.obj("Type::Named",
+                                                Twist.attr("id", "Int"))))),
+                        Twist.arr("channels",
+                            Twist.obj("Definition::Channel",
+                                Twist.attr("name", "$<C>"),
+                                Twist.value("type",
+                                    Twist.obj("Type::Channel",
+                                        Twist.attr("direction", "Both"),
+                                        Twist.value("msgType",
+                                            Twist.obj("Type::Named",
+                                                Twist.attr("id", "F"))))))),
+                        Twist.arr("slots",
+                            Twist.obj("Def::Quark::Slot",
+                                Twist.attr("name", "$<sl>"),
+                                        Twist.value("type",
+                                            Twist.obj("Type::Named",
+                                                Twist.attr("id", "Int"))),
+                                Twist.value("initValue",
+                                    Twist.obj("Expr::LVal::Id",
+                                        Twist.attr("id", "i"))))),
+                        Twist.arr("actions",
+                            Twist.obj("Action::Send",
+                                Twist.value("channel",
+                                    Twist.obj("Expr::LVal::Id",
+                                        Twist.attr("id", "C"))),
+                                    Twist.value("message",
+                                        Twist.obj("Expr::Boson::Tuple",
+                                            Twist.attr("name", "Flubber"),
+                                            Twist.arr("fields",
+                                                Twist.obj("Expr::Operator",
+                                                    Twist.attr("operator", "Plus"),
+                                                    Twist.arr("operands",
+                                                        Twist.obj("Expr::Literal",
+                                                            Twist.attr("kind", "IntLit"),
+                                                            Twist.attr("value", "23")),
+                                                        Twist.obj("Expr::LVal::Id",
+                                                                Twist.attr("id", "x"))))))))))))
+
         val m = parse(input)
-        assertEquals(expected, m.twist().toString())
+        assertEquals(expected.toString(), m.twist().toString())
     }
 
     @Test
@@ -84,519 +89,675 @@ class ParserTest {
         val input: String = """
                 use a::bb::ccc::{d,e}
                 boson [T, U]Speckle is
-                   One(Int, Int)
-                 or Two{name: String, v: Float}
-                end
+                   One(Int, Int),
+                  Two{name: String, v: Float}
+                end@boson
         """.trimIndent()
-        val expected: String = """
-            obj PicaModule:
-               id = test
-               uses = array:
-                  obj Use:
-                     module = a::bb::ccc
-                     names = array:
-                        d
-                        e
-               defs = array:
-                  obj Definition::Boson:
-                     module = test
-                     name = Speckle
-                     typeParams = array:
-                        obj TypeVar:
-                           name = T
-                        obj TypeVar:
-                           name = U
-                     options = array:
-                        obj Boson::TupleOption:
-                           name = One
-                           fields = array:
-                              obj Type::Named:
-                                 id = Int
-                              obj Type::Named:
-                                 id = Int
-                        obj Boson::StructOption:
-                           name = Two
-                           fields = array:
-                              obj BosonStructField:
-                                 name = name
-                                 type:
-                                    obj Type::Named:
-                                       id = String
-                              obj BosonStructField:
-                                 name = v
-                                 type:
-                                    obj Type::Named:
-                                       id = Float
-
-        """.trimIndent()
+        val expected =
+            Twist.obj("HadronDefinition",
+                Twist.attr("id", "test"),
+                Twist.arr("uses",
+                    Twist.obj("Use",
+                        Twist.attr("hadron", "a::bb::ccc"),
+                        Twist.arr("names",
+                            Twist.leaf("$<d>"),
+                            Twist.leaf("$<e>")))),
+                Twist.arr("defs",
+                    Twist.obj("Def::Boson",
+                        Twist.attr("hadron", "test"),
+                        Twist.attr("name", "$<Speckle>"),
+                        Twist.arr("typeParams",
+                            Twist.obj("Type::TypeVar",
+                                Twist.attr("name", "$<T>")),
+                            Twist.obj("Type::TypeVar",
+                                Twist.attr("name", "$<U>"))),
+                        Twist.arr("options",
+                            Twist.obj("Def::Boson::TupleOption",
+                                Twist.attr("name", "$<One>"),
+                                Twist.arr("fields",
+                                    Twist.obj("Type::Named",
+                                        Twist.attr("id", "Int")),
+                                    Twist.obj("Type::Named",
+                                        Twist.attr("id", "Int")))),
+                            Twist.obj("Def::Boson::StructOption",
+                                Twist.attr("name","$<Two>"),
+                                Twist.arr("fields",
+                                    Twist.obj("Param::TypedId",
+                                        Twist.attr("name", "$<name>"),
+                                        Twist.value("type",
+                                            Twist.obj("Type::Named",
+                                                Twist.attr("id", "String")))),
+                                    Twist.obj("Param::TypedId",
+                                        Twist.attr("name", "$<v>"),
+                                        Twist.value("type",
+                                            Twist.obj("Type::Named",
+                                                Twist.attr("id", "Float"))))))))))
         val m = parse(input)
-        assertEquals(expected, m.twist().toString())
+        assertEquals(expected.toString(), m.twist().toString())
     }
 
 
     @Test
     fun testBosonAndQuarkParse() {
-        val input: String = """
+        val input: String = """            
         boson ScannerOutput is
-          Token{type: String, content: String, line: Int}
-        or  EndOfStream(Unit)
-        or  ScanError{message: String, line: Int}
+          Token{type: String, content: String, line: Int},
+          EndOfStream(Unit),
+          ScanError{message: String, line: Int}
         end@boson
 
-        quark Scanner(inp: InputStream) is
+        quark Scanner 
+          args (inp: InputStream) is 
           chan output: ScannerOutput
-          var input: InputStream = inp
-          var currentToken: String = ""
+          slot input: InputStream = inp
+          slot currentToken: String = ""
           do
-            repeat
-              receive input do
-                on More(c) do
-                    currentToken = currentToken + c;
-                    if  something > other then
-                        send output(Token{type: "t", content: currentToken, line: 23});
+            repeat 
+              receive input {
+                on More(c) do seq {
+                    currentToken = currentToken + c,
+                    if (something > other) seq {
+                        send output(Token{type: "t", content: currentToken, line: 23}),
                         currentToken = ""
-                    else
+                    } else 
                         x = 3
-                    end@if
-                end@on
-                on End(u) do
-                    send output(Token{type: "t", content: currentToken, line: 18});
-                    send output(EndOfStream(Unit));
+                 }
+                 on End(u) do seq {
+                    send output(Token{type: "t", content: currentToken, line: 18}),
+                    send output(EndOfStream(Unit)),
                     exit
-                end@on
-            end@receive
-          end@repeat
-        end@quark
+                }
+              }
+            end@quark
+        
 
         """.trimIndent()
 
         val m = parse(input)
-        val expected = """
-            obj PicaModule:
-               id = test
-               defs = array:
-                  obj Definition::Boson:
-                     module = test
-                     name = ScannerOutput
-                     options = array:
-                        obj Boson::StructOption:
-                           name = Token
-                           fields = array:
-                              obj BosonStructField:
-                                 name = type
-                                 type:
-                                    obj Type::Named:
-                                       id = String
-                              obj BosonStructField:
-                                 name = content
-                                 type:
-                                    obj Type::Named:
-                                       id = String
-                              obj BosonStructField:
-                                 name = line
-                                 type:
-                                    obj Type::Named:
-                                       id = Int
-                        obj Boson::TupleOption:
-                           name = EndOfStream
-                           fields = array:
-                              obj Type::Named:
-                                 id = Unit
-                        obj Boson::StructOption:
-                           name = ScanError
-                           fields = array:
-                              obj BosonStructField:
-                                 name = message
-                                 type:
-                                    obj Type::Named:
-                                       id = String
-                              obj BosonStructField:
-                                 name = line
-                                 type:
-                                    obj Type::Named:
-                                       id = Int
-                  obj Definition::Quark:
-                     module = test
-                     name = Scanner
-                     valueParams = array:
-                        obj param:
-                           name = inp
-                           type:
-                              obj Type::Named:
-                                 id = InputStream
-                     channels = array:
-                        obj Definition::Channel:
-                           name = output
-                           messageType:
-                              obj Type::Named:
-                                 id = ScannerOutput
-                     slots = array:
-                        obj Object::Slot:
-                           name = input
-                           type:
-                              obj Type::Named:
-                                 id = InputStream
-                           initValue:
-                              obj Expr::LVal::Id:
-                                 id = inp
-                        obj Object::Slot:
-                           name = currentToken
-                           type:
-                              obj Type::Named:
-                                 id = String
-                           initValue:
-                              obj Expr::Literal:
-                                 kind = StrLit
-                                 value = ""
-                     actions = array:
-                        obj Action::Receive:
-                           channel:
-                              obj Expr::LVal::Id:
-                                 id = input
-                           actions = array:
-                              obj Option:
-                                 pattern:
-                                    obj BosonTuplePattern:
-                                       OptionName = More
-                                       fields = array:
-                                          boundVariable = c
-                                 action:
-                                    obj Action::Seq:
-                                       actions = array:
-                                          obj Action::Assignment:
-                                             target:
-                                                obj Expr::LVal::Id:
-                                                   id = currentToken
-                                             value:
-                                                obj Expr::Operator:
-                                                   operator = Plus
-                                                   operands = array:
-                                                      obj Expr::LVal::Id:
-                                                         id = currentToken
-                                                      obj Expr::LVal::Id:
-                                                         id = c
-                                          obj Action::If:
-                                             cond:
-                                                obj Expr::Operator:
-                                                   operator = Greater
-                                                   operands = array:
-                                                      obj Expr::LVal::Id:
-                                                         id = something
-                                                      obj Expr::LVal::Id:
-                                                         id = other
-                                             true:
-                                                obj Action::Seq:
-                                                   actions = array:
-                                                      obj Action::Send:
-                                                         channel:
-                                                            obj Expr::LVal::Id:
-                                                               id = output
-                                                         message:
-                                                            obj Expr::Boson::Struct:
-                                                               name = Token
-                                                               fields = array:
-                                                                  obj field:
-                                                                     name = type
-                                                                     value:
-                                                                        obj Expr::Literal:
-                                                                           kind = StrLit
-                                                                           value = "t"
-                                                                  obj field:
-                                                                     name = content
-                                                                     value:
-                                                                        obj Expr::LVal::Id:
-                                                                           id = currentToken
-                                                                  obj field:
-                                                                     name = line
-                                                                     value:
-                                                                        obj Expr::Literal:
-                                                                           kind = IntLit
-                                                                           value = 23
-                                                      obj Action::Assignment:
-                                                         target:
-                                                            obj Expr::LVal::Id:
-                                                               id = currentToken
-                                                         value:
-                                                            obj Expr::Literal:
-                                                               kind = StrLit
-                                                               value = ""
-                                             false:
-                                                obj Action::Assignment:
-                                                   target:
-                                                      obj Expr::LVal::Id:
-                                                         id = x
-                                                   value:
-                                                      obj Expr::Literal:
-                                                         kind = IntLit
-                                                         value = 3
-                              obj Option:
-                                 pattern:
-                                    obj BosonTuplePattern:
-                                       OptionName = End
-                                       fields = array:
-                                          boundVariable = u
-                                 action:
-                                    obj Action::Seq:
-                                       actions = array:
-                                          obj Action::Send:
-                                             channel:
-                                                obj Expr::LVal::Id:
-                                                   id = output
-                                             message:
-                                                obj Expr::Boson::Struct:
-                                                   name = Token
-                                                   fields = array:
-                                                      obj field:
-                                                         name = type
-                                                         value:
-                                                            obj Expr::Literal:
-                                                               kind = StrLit
-                                                               value = "t"
-                                                      obj field:
-                                                         name = content
-                                                         value:
-                                                            obj Expr::LVal::Id:
-                                                               id = currentToken
-                                                      obj field:
-                                                         name = line
-                                                         value:
-                                                            obj Expr::Literal:
-                                                               kind = IntLit
-                                                               value = 18
-                                          obj Action::Seq:
-                                             actions = array:
-                                                obj Action::Send:
-                                                   channel:
-                                                      obj Expr::LVal::Id:
-                                                         id = output
-                                                   message:
-                                                      obj Expr::Boson::Tuple:
-                                                         name = EndOfStream
-                                                         fields = array:
-                                                            obj Expr::LVal::Id:
-                                                               id = Unit
-                                                Action::Exit
-
-        """.trimIndent()
-        assertEquals(expected, m.twist().toString())
+        val expected = Twist.obj("HadronDefinition",
+            Twist.attr("id", "test"),
+            Twist.arr("defs",
+                Twist.obj("Def::Boson",
+                    Twist.attr("hadron", "test"),
+                    Twist.attr("name", "$<ScannerOutput>"),
+                    Twist.arr("options",
+                        Twist.obj("Def::Boson::StructOption",
+                            Twist.attr("name", "$<Token>"),
+                            Twist.arr("fields",
+                                Twist.obj("Param::TypedId",
+                                    Twist.attr("name", "$<type>"),
+                                    Twist.value("type",
+                                        Twist.obj("Type::Named",
+                                            Twist.attr("id", "String")
+                                        )
+                                    )
+                                ),
+                                Twist.obj("Param::TypedId",
+                                    Twist.attr("name", "$<content>"),
+                                    Twist.value("type",
+                                        Twist.obj("Type::Named",
+                                            Twist.attr("id", "String")))),
+                                Twist.obj("Param::TypedId",
+                                    Twist.attr("name", "$<line>"),
+                                    Twist.value("type",
+                                        Twist.obj("Type::Named",
+                                            Twist.attr("id", "Int")))))),
+                        Twist.obj("Def::Boson::TupleOption",
+                            Twist.attr("name", "$<EndOfStream>"),
+                            Twist.arr("fields",
+                                Twist.obj("Type::Named",
+                                    Twist.attr("id", "Unit")))),
+                        Twist.obj("Def::Boson::StructOption",
+                            Twist.attr("name", "$<ScanError>"),
+                            Twist.arr("fields",
+                                Twist.obj("Param::TypedId",
+                                    Twist.attr("name", "$<message>"),
+                                    Twist.value("type",
+                                        Twist.obj("Type::Named",
+                                            Twist.attr("id", "String")))),
+                                Twist.obj("Param::TypedId",
+                                    Twist.attr("name", "$<line>"),
+                                    Twist.value("type",
+                                        Twist.obj("Type::Named",
+                                            Twist.attr("id", "Int")))))))),
+                Twist.obj("Def::Quark",
+                    Twist.attr("hadron", "test"),
+                    Twist.attr("name", "$<Scanner>"),
+                    Twist.arr("valueParams",
+                        Twist.obj("Param::TypedId",
+                            Twist.attr("name", "$<inp>"),
+                            Twist.value("type",
+                                Twist.obj("Type::Named",
+                                    Twist.attr("id", "InputStream"))))),
+                    Twist.arr("channels",
+                        Twist.obj("Definition::Channel",
+                            Twist.attr("name", "$<output>"),
+                            Twist.value("type",
+                                Twist.obj("Type::Channel",
+                                    Twist.attr("direction", "Both"),
+                                    Twist.value("msgType",
+                                        Twist.obj("Type::Named",
+                                            Twist.attr("id", "ScannerOutput"))))))),
+                    Twist.arr("slots",
+                        Twist.obj("Def::Quark::Slot",
+                            Twist.attr("name", "$<input>"),
+                            Twist.value("type",
+                                Twist.obj("Type::Named",
+                                    Twist.attr("id", "InputStream"))),
+                            Twist.value("initValue",
+                                Twist.obj("Expr::LVal::Id",
+                                    Twist.attr("id", "inp")))),
+                        Twist.obj("Def::Quark::Slot",
+                            Twist.attr("name", "$<currentToken>"),
+                            Twist.value("type",
+                                Twist.obj("Type::Named",
+                                    Twist.attr("id", "String"))),
+                            Twist.value("initValue",
+                                Twist.obj("Expr::Literal",
+                                    Twist.attr("kind", "StrLit"),
+                                    Twist.attr("value", "\"\""))))),
+                    Twist.arr("actions",
+                        Twist.obj("Action::Receive",
+                            Twist.value("channel",
+                                Twist.obj("Expr::LVal::Id",
+                                    Twist.attr("id", "input"))),
+                            Twist.arr("actions",
+                                Twist.obj("Action::Recieve::ReceiveOption",
+                                    Twist.value("pattern",
+                                        Twist.obj("Action::Receive::BosonTuplePattern",
+                                            Twist.attr("OptionName", "$<More>"),
+                                            Twist.arr("fields",
+                                                Twist.attr("boundVariable", "$<c>")))),
+                                    Twist.value("action",
+                                        Twist.obj("Action::Seq",
+                                            Twist.arr("actions",
+                                                Twist.obj("Action::Assignment",
+                                                    Twist.value("target",
+                                                        Twist.obj("Expr::LVal::Id",
+                                                            Twist.attr("id", "currentToken"))),
+                                                    Twist.value("value",
+                                                        Twist.obj("Expr::Operator",
+                                                            Twist.attr("operator", "Plus"),
+                                                            Twist.arr("operands",
+                                                                Twist.obj("Expr::LVal::Id",
+                                                                        Twist.attr("id", "currentToken")),
+                                                                Twist.obj("Expr::LVal::Id",
+                                                                    Twist.attr("id", "c")))))),
+                                                Twist.obj("Action::If",
+                                                    Twist.value("cond",
+                                                        Twist.obj("Expr::Operator",
+                                                            Twist.attr("operator", "Greater"),
+                                                            Twist.arr("operands",
+                                                                Twist.obj("Expr::LVal::Id",
+                                                                    Twist.attr("id", "something")),
+                                                                Twist.obj("Expr::LVal::Id",
+                                                                    Twist.attr("id", "other"))))),
+                                                    Twist.value("true",
+                                                        Twist.obj("Action::Seq",
+                                                                Twist.arr("actions",
+                                                                    Twist.obj("Action::Send",
+                                                                        Twist.value("channel",
+                                                                            Twist.obj("Expr::LVal::Id",
+                                                                                Twist.attr("id", "output"))),
+                                                                        Twist.value("message",
+                                                                            Twist.obj("Expr::Boson::Struct",
+                                                                                Twist.attr("name", "Token"),
+                                                                                Twist.arr("fields",
+                                                                                    Twist.obj("Expr::Boson::FieldValue",
+                                                                                        Twist.attr("name", "$<type>"),
+                                                                                        Twist.value("value",
+                                                                                            Twist.obj("Expr::Literal",
+                                                                                                Twist.attr("kind", "StrLit"),
+                                                                                                Twist.attr("value", "\"t\"")))),
+                                                                                    Twist.obj("Expr::Boson::FieldValue",
+                                                                                        Twist.attr("name", "$<content>"),
+                                                                                        Twist.value("value",
+                                                                                            Twist.obj("Expr::LVal::Id",
+                                                                                                Twist.attr("id", "currentToken")))),
+                                                                                    Twist.obj("Expr::Boson::FieldValue",
+                                                                                        Twist.attr("name", "$<line>"),
+                                                                                        Twist.value("value",
+                                                                                            Twist.obj("Expr::Literal",
+                                                                                                Twist.attr("kind", "IntLit"),
+                                                                                                Twist.attr("value", "23")))))))),
+                                                                    Twist.obj("Action::Assignment",
+                                                                        Twist.value("target",
+                                                                            Twist.obj("Expr::LVal::Id",
+                                                                                Twist.attr("id", "currentToken"))),
+                                                                        Twist.value("value",
+                                                                            Twist.obj("Expr::Literal",
+                                                                                Twist.attr("kind", "StrLit"),
+                                                                                Twist.attr("value", "\"\""))))))),
+                                                    Twist.value("false",
+                                                        Twist.obj("Action::Assignment",
+                                                            Twist.value("target",
+                                                                Twist.obj("Expr::LVal::Id",
+                                                                    Twist.attr("id", "x"))),
+                                                            Twist.value("value",
+                                                                Twist.obj("Expr::Literal",
+                                                                    Twist.attr("kind", "IntLit"),
+                                                                    Twist.attr("value", "3")))))))))),
+                                Twist.obj("Action::Recieve::ReceiveOption",
+                                    Twist.value("pattern",
+                                        Twist.obj("Action::Receive::BosonTuplePattern",
+                                            Twist.attr("OptionName", "$<End>"),
+                                            Twist.arr("fields",
+                                                Twist.attr("boundVariable", "$<u>")))),
+                                    Twist.value("action",
+                                        Twist.obj("Action::Seq",
+                                            Twist.arr("actions",
+                                                Twist.obj("Action::Send",
+                                                    Twist.value("channel",
+                                                        Twist.obj("Expr::LVal::Id",
+                                                            Twist.attr("id", "output"))),
+                                                    Twist.value("message",
+                                                        Twist.obj("Expr::Boson::Struct",
+                                                            Twist.attr("name", "Token"),
+                                                            Twist.arr("fields",
+                                                                Twist.obj("Expr::Boson::FieldValue",
+                                                                    Twist.attr("name", "$<type>"),
+                                                                    Twist.value("value",
+                                                                        Twist.obj("Expr::Literal",
+                                                                            Twist.attr("kind", "StrLit"),
+                                                                            Twist.attr("value", "\"t\"")))),
+                                                                Twist.obj("Expr::Boson::FieldValue",
+                                                                    Twist.attr("name", "$<content>"),
+                                                                    Twist.value("value",
+                                                                        Twist.obj("Expr::LVal::Id",
+                                                                            Twist.attr("id", "currentToken")))),
+                                                                Twist.obj("Expr::Boson::FieldValue",
+                                                                    Twist.attr("name", "$<line>"),
+                                                                    Twist.value("value",
+                                                                        Twist.obj("Expr::Literal",
+                                                                            Twist.attr("kind", "IntLit"),
+                                                                            Twist.attr("value", "18")))))))),
+                                                Twist.obj("Action::Send",
+                                                    Twist.value("channel",
+                                                        Twist.obj("Expr::LVal::Id",
+                                                            Twist.attr("id", "output"))),
+                                                    Twist.value("message",
+                                                        Twist.obj("Expr::Boson::Tuple",
+                                                            Twist.attr("name", "EndOfStream"),
+                                                            Twist.arr("fields",
+                                                                Twist.obj("Expr::LVal::Id",
+                                                                    Twist.attr("id", "Unit")))))),
+                                                Twist.leaf("Action::Exit")))))))))))
+        assertEquals(expected.toString(), m.twist().toString())
     }
 
     @Test
     fun testParseChannelType() {
         val input = """
-            quark [T]MyQuark(i: Int) composes a::b is
-                chan C : F
-                var sl: Int = i
-                 do
-                    var ch : chan String = newchan String;
-                    var chin: chan(in) String = ch;
+            quark [T]MyQuark composes a::b 
+               args (i: Int) is
+               chan C : F
+               slot sl: Int = i
+               do 
+                 seq {
+                    var ch : chan String = newchan String,
+                    var chin: chan in String = ch,
                     send C(Flubber(23 + x, chin))
-            end@quark
+                 }
+               end@quark
         """.trimIndent()
-        val expected = """
-            obj PicaModule:
-               id = test
-               defs = array:
-                  obj Definition::Quark:
-                     module = test
-                     name = MyQuark
-                     typeParams = array:
-                        obj TypeVar:
-                           name = T
-                     valueParams = array:
-                        obj param:
-                           name = i
-                           type:
-                              obj Type::Named:
-                                 id = Int
-                     channels = array:
-                        obj Definition::Channel:
-                           name = C
-                           messageType:
-                              obj Type::Named:
-                                 id = F
-                     slots = array:
-                        obj Object::Slot:
-                           name = sl
-                           type:
-                              obj Type::Named:
-                                 id = Int
-                           initValue:
-                              obj Expr::LVal::Id:
-                                 id = i
-                     actions = array:
-                        obj Action::Seq:
-                           actions = array:
-                              obj Action::VarDef:
-                                 name = ch
-                                 type:
-                                    obj Type::Channel:
-                                       direction = Both
-                                       msgType:
-                                          obj Type::Named:
-                                             id = String
-                                 value:
-                                    obj Expr::NewChannel:
-                                       type:
-                                          obj Type::Named:
-                                             id = String
-                              obj Action::Seq:
-                                 actions = array:
-                                    obj Action::VarDef:
-                                       name = chin
-                                       type:
-                                          obj Type::Channel:
-                                             direction = In
-                                             msgType:
-                                                obj Type::Named:
-                                                   id = String
-                                       value:
-                                          obj Expr::LVal::Id:
-                                             id = ch
-                                    obj Action::Send:
-                                       channel:
-                                          obj Expr::LVal::Id:
-                                             id = C
-                                       message:
-                                          obj Expr::Boson::Tuple:
-                                             name = Flubber
-                                             fields = array:
-                                                obj Expr::Operator:
-                                                   operator = Plus
-                                                   operands = array:
-                                                      obj Expr::Literal:
-                                                         kind = IntLit
-                                                         value = 23
-                                                      obj Expr::LVal::Id:
-                                                         id = x
-                                                obj Expr::LVal::Id:
-                                                   id = chin
+        val expected =
+            Twist.obj("HadronDefinition",
+                Twist.attr("id", "test"),
+                Twist.arr("defs",
+                    Twist.obj("Def::Quark",
+                        Twist.attr("hadron", "test"),
+                        Twist.attr("name", "$<MyQuark>"),
+                        Twist.arr("typeParams",
+                            Twist.obj("Type::TypeVar",
+                                Twist.attr("name", "$<T>"))),
+                        Twist.arr("valueParams",
+                            Twist.obj("Param::TypedId",
+                                Twist.attr("name", "$<i>"),
+                                Twist.value("type",
+                                    Twist.obj("Type::Named",
+                                        Twist.attr("id", "Int"))))),
+                        Twist.arr("channels",
+                            Twist.obj("Definition::Channel",
+                                Twist.attr("name", "$<C>"),
+                                Twist.value("type",
+                                    Twist.obj("Type::Channel",
+                                        Twist.attr("direction", "Both"),
+                                        Twist.value("msgType",
+                                            Twist.obj("Type::Named",
+                                                Twist.attr("id", "F"))))))),
+                        Twist.arr("slots",
+                            Twist.obj("Def::Quark::Slot",
+                                Twist.attr("name", "$<sl>"),
+                                Twist.value("type",
+                                    Twist.obj("Type::Named",
+                                        Twist.attr("id", "Int"))),
+                                    Twist.value("initValue",
+                                        Twist.obj("Expr::LVal::Id",
+                                            Twist.attr("id", "i"))))),
+                        Twist.arr("actions",
+                            Twist.obj("Action::Seq",
+                                Twist.arr("actions",
+                                    Twist.obj("Action::VarDef",
+                                        Twist.attr("name", "$<ch>"),
+                                        Twist.value("type",
+                                            Twist.obj("Type::Channel",
+                                                Twist.attr("direction", "Both"),
+                                                Twist.value("msgType",
+                                                    Twist.obj("Type::Named",
+                                                        Twist.attr("id", "String"))))),
+                                        Twist.value("value",
+                                            Twist.obj("Expr::NewChannel",
+                                                Twist.value("type",
+                                                    Twist.obj("Type::Named",
+                                                        Twist.attr("id", "String")))))),
+                                    Twist.obj("Action::VarDef",
+                                        Twist.attr("name", "$<chin>"),
+                                        Twist.value("type",
+                                            Twist.obj("Type::Channel",
+                                                Twist.attr("direction", "In"),
+                                                Twist.value("msgType",
+                                                    Twist.obj("Type::Named",
+                                                        Twist.attr("id", "String"))))),
+                                        Twist.value("value",
+                                            Twist.obj("Expr::LVal::Id",
+                                                Twist.attr("id", "ch")))),
+                                    Twist.obj("Action::Send",
+                                        Twist.value("channel",
+                                            Twist.obj("Expr::LVal::Id",
+                                                Twist.attr("id", "C"))),
+                                        Twist.value("message",
+                                            Twist.obj("Expr::Boson::Tuple",
+                                                Twist.attr("name", "Flubber"),
+                                                Twist.arr("fields",
+                                                    Twist.obj("Expr::Operator",
+                                                        Twist.attr("operator", "Plus"),
+                                                        Twist.arr("operands",
+                                                            Twist.obj("Expr::Literal",
+                                                                Twist.attr("kind", "IntLit"),
+                                                                Twist.attr("value", "23")),
+                                                            Twist.obj("Expr::LVal::Id",
+                                                                Twist.attr("id", "x")))),
+                                                    Twist.obj("Expr::LVal::Id",
+                                                        Twist.attr("id", "chin"))))))))))))
 
-        """.trimIndent()
         val m = parse(input)
-        assertEquals(expected, m.twist().toString())
+        assertEquals(expected.toString(), m.twist().toString())
 
     }
 
     @Test
     fun testParseQuarkWithParAndSel() {
         val input = """
-            quark [T]MyQuark(i: Int) composes a::b is
-                chan C : F
-                var sl: Int = i
-                 do
-                    (send C(Flubber(23 + x, chin)) |
-                    send D(foo(false))) &
-                    send E(bar(true)) &
-                    (send Q(oops(27)) ; send P(woops(28)))
-            end@quark
+            quark [T] MyQuark composes a::b 
+               args(i: Int) is
+               chan C : F 
+               slot sl: Int = i
+               do 
+                  par {
+                    one { 
+                       send C(Flubber(23 + x, chin)),
+                       send D(foo(false))
+                    },
+                    send E(bar(true)),
+                    seq {
+                      send Q(oops(27)),
+                      send P(woops(28))
+                    }
+                  }
+               end@quark
         """.trimIndent()
-        val expected = """
-            obj PicaModule:
-               id = test
-               defs = array:
-                  obj Definition::Quark:
-                     module = test
-                     name = MyQuark
-                     typeParams = array:
-                        obj TypeVar:
-                           name = T
-                     valueParams = array:
-                        obj param:
-                           name = i
-                           type:
-                              obj Type::Named:
-                                 id = Int
-                     channels = array:
-                        obj Definition::Channel:
-                           name = C
-                           messageType:
-                              obj Type::Named:
-                                 id = F
-                     slots = array:
-                        obj Object::Slot:
-                           name = sl
-                           type:
-                              obj Type::Named:
-                                 id = Int
-                           initValue:
-                              obj Expr::LVal::Id:
-                                 id = i
-                     actions = array:
-                        obj Action::Par:
-                           actions = array:
-                              obj Action::Choice:
-                                 choices = array:
-                                    obj Action::Send:
-                                       channel:
-                                          obj Expr::LVal::Id:
-                                             id = C
-                                       message:
-                                          obj Expr::Boson::Tuple:
-                                             name = Flubber
-                                             fields = array:
-                                                obj Expr::Operator:
-                                                   operator = Plus
-                                                   operands = array:
-                                                      obj Expr::Literal:
-                                                         kind = IntLit
-                                                         value = 23
-                                                      obj Expr::LVal::Id:
-                                                         id = x
-                                                obj Expr::LVal::Id:
-                                                   id = chin
-                                    obj Action::Send:
-                                       channel:
-                                          obj Expr::LVal::Id:
-                                             id = D
-                                       message:
-                                          obj Expr::Boson::Tuple:
-                                             name = foo
-                                             fields = array:
-                                                obj Expr::LVal::Id:
-                                                   id = false
-                              obj Action::Par:
-                                 actions = array:
-                                    obj Action::Send:
-                                       channel:
-                                          obj Expr::LVal::Id:
-                                             id = E
-                                       message:
-                                          obj Expr::Boson::Tuple:
-                                             name = bar
-                                             fields = array:
-                                                obj Expr::LVal::Id:
-                                                   id = true
-                                    obj Action::Seq:
-                                       actions = array:
-                                          obj Action::Send:
-                                             channel:
-                                                obj Expr::LVal::Id:
-                                                   id = Q
-                                             message:
-                                                obj Expr::Boson::Tuple:
-                                                   name = oops
-                                                   fields = array:
-                                                      obj Expr::Literal:
-                                                         kind = IntLit
-                                                         value = 27
-                                          obj Action::Send:
-                                             channel:
-                                                obj Expr::LVal::Id:
-                                                   id = P
-                                             message:
-                                                obj Expr::Boson::Tuple:
-                                                   name = woops
-                                                   fields = array:
-                                                      obj Expr::Literal:
-                                                         kind = IntLit
-                                                         value = 28
+        val expected =
+            Twist.obj("HadronDefinition",
+                Twist.attr("id", "test"),
+                Twist.arr("defs",
+                    Twist.obj("Def::Quark",
+                        Twist.attr("hadron", "test"),
+                        Twist.attr("name", "$<MyQuark>"),
+                        Twist.arr("typeParams",
+                            Twist.obj("Type::TypeVar",
+                                Twist.attr("name", "$<T>"))),
+                        Twist.arr("valueParams",
+                            Twist.obj("Param::TypedId",
+                                Twist.attr("name", "$<i>"),
+                                Twist.value("type",
+                                    Twist.obj("Type::Named",
+                                        Twist.attr("id", "Int"))))),
+                        Twist.arr("channels",
+                            Twist.obj("Definition::Channel",
+                                Twist.attr("name", "$<C>"),
+                                Twist.value("type",
+                                    Twist.obj("Type::Channel",
+                                        Twist.attr("direction", "Both"),
+                                        Twist.value("msgType",
+                                            Twist.obj("Type::Named",
+                                                Twist.attr("id", "F"))))))),
+                        Twist.arr("slots",
+                            Twist.obj("Def::Quark::Slot",
+                                Twist.attr("name", "$<sl>"),
+                                Twist.value("type",
+                                    Twist.obj("Type::Named",
+                                        Twist.attr("id", "Int"))),
+                                Twist.value("initValue",
+                                    Twist.obj("Expr::LVal::Id",
+                                        Twist.attr("id", "i"))))),
+                        Twist.arr("actions",
+                            Twist.obj("Action::Par",
+                                Twist.arr("actions",
+                                    Twist.obj("Action::Choice",
+                                        Twist.arr("choices",
+                                            Twist.obj("Action::Send",
+                                                Twist.value("channel",
+                                                    Twist.obj("Expr::LVal::Id",
+                                                        Twist.attr("id", "C"))),
+                                                Twist.value("message",
+                                                    Twist.obj("Expr::Boson::Tuple",
+                                                        Twist.attr("name", "Flubber"),
+                                                        Twist.arr("fields",
+                                                            Twist.obj("Expr::Operator",
+                                                                Twist.attr("operator", "Plus"),
+                                                                Twist.arr("operands",
+                                                                    Twist.obj("Expr::Literal",
+                                                                        Twist.attr("kind", "IntLit"),
+                                                                        Twist.attr("value", "23")),
+                                                                    Twist.obj("Expr::LVal::Id",
+                                                                        Twist.attr("id", "x")))),
+                                                            Twist.obj("Expr::LVal::Id",
+                                                                Twist.attr("id", "chin")))))),
+                                            Twist.obj("Action::Send",
+                                                Twist.value("channel",
+                                                    Twist.obj("Expr::LVal::Id",
+                                                        Twist.attr("id", "D"))),
+                                                Twist.value("message",
+                                                    Twist.obj("Expr::Boson::Tuple",
+                                                        Twist.attr("name", "foo"),
+                                                        Twist.arr("fields",
+                                                            Twist.obj("Expr::LVal::Id",
+                                                                Twist.attr("id", "false")))))))),
+                                    Twist.obj("Action::Send",
+                                        Twist.value("channel",
+                                            Twist.obj("Expr::LVal::Id",
+                                                Twist.attr("id", "E"))),
+                                        Twist.value("message",
+                                            Twist.obj("Expr::Boson::Tuple",
+                                                Twist.attr("name", "bar"),
+                                                Twist.arr("fields",
+                                                    Twist.obj("Expr::LVal::Id",
+                                                        Twist.attr("id", "true")))))),
+                                    Twist.obj("Action::Seq",
+                                        Twist.arr("actions",
+                                    Twist.obj("Action::Send",
+                                        Twist.value("channel",
+                                            Twist.obj("Expr::LVal::Id",
+                                                Twist.attr("id", "Q"))),
+                                        Twist.value("message",
+                                            Twist.obj("Expr::Boson::Tuple",
+                                                Twist.attr("name", "oops"),
+                                                Twist.arr("fields",
+                                                    Twist.obj("Expr::Literal",
+                                                        Twist.attr("kind", "IntLit"),
+                                                        Twist.attr("value", "27")))))),
+                                    Twist.obj("Action::Send",
+                                        Twist.value("channel",
+                                            Twist.obj("Expr::LVal::Id",
+                                                Twist.attr("id", "P"))),
+                                        Twist.value("message",
+                                            Twist.obj("Expr::Boson::Tuple",
+                                                Twist.attr("name", "woops"),
+                                                Twist.arr("fields",
+                                                    Twist.obj("Expr::Literal",
+                                                        Twist.attr("kind", "IntLit"),
+                                                        Twist.attr("value", "28"))))))))))))))
 
-        """.trimIndent()
         val m = parse(input)
-        assertEquals(expected, m.twist().toString())
+        //System.err.println(m.twist().renderCode(0))
+
+        assertEquals(expected.toString(), m.twist().toString())
 
     }
 
+
+    @Test
+    fun testPingPong() {
+        val pingPong = """
+        boson Ball is
+           Ping(Int, chan Ball),
+          Pong(Int)
+        end@boson
+        
+        quark PingPong
+           args(q: chan Ball) is
+             chan input: Ball
+             chan output: Ball
+        do
+           par {
+              receive input {
+                 on Ping(i, reply) do send reply(Pong(i+1))
+                 on Pong(i) do send output(Ping(i, input)) 
+              },
+              send q(Ping(0, q))
+          }
+        end@quark
+
+        """.trimIndent()
+        val m = parse(pingPong)
+        val expected =   Twist.obj("HadronDefinition",
+            Twist.attr("id", "test"),
+            Twist.arr("defs",
+                Twist.obj("Def::Boson",
+                    Twist.attr("hadron", "test"),
+                    Twist.attr("name", "$<Ball>"),
+                    Twist.arr("options",
+                        Twist.obj("Def::Boson::TupleOption",
+                            Twist.attr("name", "$<Ping>"),
+                            Twist.arr("fields",
+                                Twist.obj("Type::Named",
+                                    Twist.attr("id", "Int")),
+                                Twist.obj("Type::Channel",
+                                    Twist.attr("direction", "Both"),
+                                    Twist.value("msgType",
+                                        Twist.obj("Type::Named",
+                                            Twist.attr("id", "Ball")))))),
+                        Twist.obj("Def::Boson::TupleOption",
+                            Twist.attr("name", "$<Pong>"),
+                            Twist.arr("fields",
+                                Twist.obj("Type::Named",
+                                    Twist.attr("id", "Int")))))),
+                Twist.obj("Def::Quark",
+                    Twist.attr("hadron", "test"),
+                    Twist.attr("name", "$<PingPong>"),
+                    Twist.arr("valueParams",
+                        Twist.obj("Param::TypedId",
+                            Twist.attr("name", "$<q>"),
+                            Twist.value("type",
+                                Twist.obj("Type::Channel",
+                                    Twist.attr("direction", "Both"),
+                                    Twist.value("msgType",
+                                        Twist.obj("Type::Named",
+                                            Twist.attr("id", "Ball"))))))),
+                    Twist.arr("channels",
+                        Twist.obj("Definition::Channel",
+                            Twist.attr("name", "$<input>"),
+                            Twist.value("type",
+                                Twist.obj("Type::Channel",
+                                    Twist.attr("direction", "Both"),
+                                    Twist.value("msgType",
+                                        Twist.obj("Type::Named",
+                                            Twist.attr("id", "Ball")))))),
+                        Twist.obj("Definition::Channel",
+                            Twist.attr("name", "$<output>"),
+                            Twist.value("type",
+                                Twist.obj("Type::Channel",
+                                    Twist.attr("direction", "Both"),
+                                    Twist.value("msgType",
+                                        Twist.obj("Type::Named",
+                                            Twist.attr("id", "Ball"))))))),
+                    Twist.arr("actions",
+                        Twist.obj("Action::Par",
+                            Twist.arr("actions",
+                                Twist.obj("Action::Receive",
+                                    Twist.value("channel",
+                                        Twist.obj("Expr::LVal::Id",
+                                            Twist.attr("id", "input"))),
+                                    Twist.arr("actions",
+                                        Twist.obj("Action::Recieve::ReceiveOption",
+                                            Twist.value("pattern",
+                                                Twist.obj("Action::Receive::BosonTuplePattern",
+                                                    Twist.attr("OptionName", "$<Ping>"),
+                                                    Twist.arr("fields",
+                                                        Twist.attr("boundVariable", "$<i>"),
+                                                        Twist.attr("boundVariable", "$<reply>")))),
+                                            Twist.value("action",
+                                                Twist.obj("Action::Send",
+                                                    Twist.value("channel",
+                                                        Twist.obj("Expr::LVal::Id",
+                                                            Twist.attr("id", "reply"))),
+                                                    Twist.value("message",
+                                                        Twist.obj("Expr::Boson::Tuple",
+                                                            Twist.attr("name", "Pong"),
+                                                            Twist.arr("fields",
+                                                                Twist.obj("Expr::Operator",
+                                                                    Twist.attr("operator", "Plus"),
+                                                                    Twist.arr("operands",
+                                                                        Twist.obj("Expr::LVal::Id",
+                                                                            Twist.attr("id", "i")),
+                                                                        Twist.obj("Expr::Literal",
+                                                                            Twist.attr("kind", "IntLit"),
+                                                                            Twist.attr("value", "1")))))))))),
+                                        Twist.obj("Action::Recieve::ReceiveOption",
+                                            Twist.value("pattern",
+                                                Twist.obj("Action::Receive::BosonTuplePattern",
+                                                    Twist.attr("OptionName", "$<Pong>"),
+                                                    Twist.arr("fields",
+                                                        Twist.attr("boundVariable", "$<i>")))),
+                                            Twist.value("action",
+                                                Twist.obj("Action::Send",
+                                                    Twist.value("channel",
+                                                        Twist.obj("Expr::LVal::Id",
+                                                            Twist.attr("id", "output"))),
+                                                    Twist.value("message",
+                                                        Twist.obj("Expr::Boson::Tuple",
+                                                            Twist.attr("name", "Ping"),
+                                                            Twist.arr("fields",
+                                                                Twist.obj("Expr::LVal::Id",
+                                                                    Twist.attr("id", "i")),
+                                                                Twist.obj("Expr::LVal::Id",
+                                                                    Twist.attr("id", "input")))))))))),
+                                Twist.obj("Action::Send",
+                                    Twist.value("channel",
+                                        Twist.obj("Expr::LVal::Id",
+                                            Twist.attr("id", "q"))),
+                                    Twist.value("message",
+                                        Twist.obj("Expr::Boson::Tuple",
+                                            Twist.attr("name", "Ping"),
+                                            Twist.arr("fields",
+                                                Twist.obj("Expr::Literal",
+                                                    Twist.attr("kind", "IntLit"),
+                                                    Twist.attr("value", "0")),
+                                                Twist.obj("Expr::LVal::Id",
+                                                    Twist.attr("id", "q"))))))))))))
+
+
+        assertEquals(expected.toString(), m.twist().toString())
+    }
 
 }

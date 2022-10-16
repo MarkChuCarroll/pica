@@ -15,117 +15,134 @@
 
 package org.goodmath.pica.ast
 
+import org.goodmath.pica.util.Symbol
 import org.goodmath.pica.util.Twist
 
 abstract class Definition(
-    val module: Identifier,
-    val name: String,
+    val hadronId: Identifier,
+    val name: Symbol,
     val typeParams: List<TypeVar>?,
-    loc: Location): KAstNode(loc)
+    loc: Location): AstNode(loc) {
+    val id = Identifier(hadronId, name, loc)
+}
 
 class BosonDefinition(
-    module: Identifier,
-    name: String,
+    hadronId: Identifier,
+    name: Symbol,
     typeParams: List<TypeVar>?,
     val options: List<BosonOption>,
     loc: Location
-): Definition(module, name, typeParams, loc) {
+): Definition(hadronId, name, typeParams, loc) {
+
     override fun twist(): Twist =
-        Twist.obj("Definition::Boson",
-            Twist.attr("module", module.toString()),
-            Twist.attr("name", name),
+        Twist.obj("Def::Boson",
+            Twist.attr("hadron", hadronId.toString()),
+            Twist.attr("name", name.toString()),
             Twist.opt(typeParams?.let { Twist.arr("typeParams", it) }),
             Twist.arr("options",
                 options))
+
+
+
 }
 
-abstract class BosonOption(val name: String, loc: Location): KAstNode(loc) {
-}
+abstract class BosonOption(
+    val name: Symbol,
+    loc: Location
+): AstNode(loc)
 
 class BosonStructOption(
-    name: String,
-    val fields: List<Pair<String, SType>>,
+    name: Symbol,
+    val fields: List<TypedIdentifier>,
     loc: Location
 ): BosonOption(name, loc) {
     override fun twist(): Twist =
-        Twist.obj("Boson::StructOption",
-            Twist.attr("name", name),
-            Twist.arr("fields",
-                fields.map { f ->
-                    Twist.obj("BosonStructField",
-                        Twist.attr("name", f.first),
-                        Twist.value("type", f.second))}))
+        Twist.obj("Def::Boson::StructOption",
+            Twist.attr("name", name.toString()),
+            Twist.arr("fields", fields))
 }
 
 class BosonTupleOption(
-    name: String,
+    name: Symbol,
     val fields: List<SType>,
     loc: Location
 ): BosonOption(name, loc) {
     override fun twist(): Twist =
-        Twist.obj("Boson::TupleOption",
-            Twist.attr("name", name),
+        Twist.obj("Def::Boson::TupleOption",
+            Twist.attr("name", name.toString()),
             Twist.arr("fields", fields))
 
 }
 
+class TypedIdentifier(
+    val name: Symbol,
+    val type: SType,
+    loc: Location): AstNode(loc) {
+    override fun twist(): Twist =
+        Twist.obj("Param::TypedId",
+            Twist.attr("name", name.toString()),
+            Twist.value("type", type))
+
+}
+
 class QuarkDefinition(
-    module: Identifier,
-    name: String,
+    hadronId: Identifier,
+    name: Symbol,
     typeParams: List<TypeVar>?,
-    val valueParams: List<Pair<String, SType>>,
+    val valueParams: List<TypedIdentifier>,
     val composes: List<SType>,
     val channels: List<ChannelDef>,
     val slots: List<SlotDef>,
     val actions: Action,
     loc: Location
-): Definition(module, name, typeParams, loc) {
+): Definition(hadronId, name, typeParams, loc) {
     override fun twist(): Twist =
-        Twist.obj("Definition::Quark",
-            Twist.attr("module", module.toString()),
-            Twist.attr("name", name),
+        Twist.obj("Def::Quark",
+            Twist.attr("hadron", hadronId.toString()),
+            Twist.attr("name", name.toString()),
             Twist.opt(typeParams?.let { Twist.arr("typeParams", it)}),
-            Twist.arr("valueParams",
-                valueParams.map { (n, t) -> Twist.obj("param",
-                Twist.attr("name", n),
-                Twist.value("type", t)) }),
+            Twist.arr("valueParams", valueParams),
             Twist.arr("channels", channels),
             Twist.arr("slots", slots),
             Twist.arr("actions", actions))
 }
 
 class ChannelDef(
-    val name: String,
-    val msgType: SType,
+    val name: Symbol,
+    val type: ChannelType,
     loc: Location
-): KAstNode(loc) {
+): AstNode(loc) {
     override fun twist(): Twist =
         Twist.obj("Definition::Channel",
-            Twist.attr("name", name),
-            Twist.value("messageType", msgType))
+            Twist.attr("name", name.toString()),
+            Twist.value("type", type))
 
 }
 
 class SlotDef(
-    val name: String,
+    val name: Symbol,
     val type: SType,
     val initValue: Expr,
     loc: Location
-): KAstNode(loc) {
+): AstNode(loc) {
     override fun twist(): Twist =
-        Twist.obj("Object::Slot",
-            Twist.attr("name", name),
+        Twist.obj("Def::Quark::Slot",
+            Twist.attr("name", name.toString()),
             Twist.value("type", type),
             Twist.value("initValue", initValue))
 
 }
 
-class FlavorDef(module: Identifier, name: String, typeParams: List<TypeVar>?,
-                val channels: List<ChannelDef>, loc: Location): Definition(module, name, typeParams, loc) {
+class FlavorDef(
+    hadronId: Identifier,
+    name: Symbol,
+    typeParams: List<TypeVar>?,
+    val channels: List<ChannelDef>,
+    loc: Location): Definition(hadronId, name, typeParams, loc) {
     override fun twist(): Twist =
-        Twist.obj("Definition::Flavor",
-            Twist.attr("module", module.toString()),
-            Twist.attr("name", name),
+        Twist.obj("Def::Flavor",
+            Twist.attr("hadron", hadronId.toString()),
+            Twist.attr("name", name.toString()),
             Twist.opt(typeParams?.let { Twist.arr("typeParams", it)}),
             Twist.arr("channels", channels))
 

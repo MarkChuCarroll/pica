@@ -24,23 +24,26 @@ import org.antlr.v4.runtime.tree.ParseTreeProperty
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.goodmath.pica.ast.*
+import org.goodmath.pica.util.Symbol
 
 class AstParser(val moduleName: String): PicaGrammarListener  {
 
     private val values: ParseTreeProperty<Any> = ParseTreeProperty()
     val moduleId: Identifier = Identifier.fromString(moduleName, Location.None)
-    private var definedModule: PicaModule? = null
+    private var definedModule: HadronDefinition? = null
 
-    fun parse(input: CharStream): PicaModule {
+    fun parse(input: CharStream): HadronDefinition {
         val lexer = PicaGrammarLexer(input)
         val tokens = CommonTokenStream(lexer)
         val parser = PicaGrammarParser(tokens)
+        parser.removeErrorListeners()
+        parser.addErrorListener(PicaErrorListener(moduleId))
         val walker = ParseTreeWalker()
-        walker.walk(this, parser.module())
+        walker.walk(this, parser.hadron())
         return getParsedModule()
     }
 
-    fun getParsedModule(): PicaModule = definedModule!!
+    fun getParsedModule(): HadronDefinition = definedModule!!
 
     private fun setValueFor(node: ParseTree, value: Any) {
         values.put(node, value)
@@ -66,13 +69,13 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     override fun exitEveryRule(ctx: ParserRuleContext) {
     }
 
-    override fun enterModule(ctx: PicaGrammarParser.ModuleContext) {
+    override fun enterHadron(ctx: PicaGrammarParser.HadronContext) {
     }
 
-    override fun exitModule(ctx: PicaGrammarParser.ModuleContext) {
+    override fun exitHadron(ctx: PicaGrammarParser.HadronContext) {
         val defs = ctx.definition().map { d -> getValueFor(d) as Definition }
         val uses = ctx.useDef().map { d -> getValueFor(d) as UseDef }
-        definedModule = PicaModule(moduleId, uses, defs)
+        definedModule = HadronDefinition(moduleId, uses, defs)
     }
 
     override fun enterUseDef(ctx: PicaGrammarParser.UseDefContext) {
@@ -80,7 +83,7 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
 
     override fun exitUseDef(ctx: PicaGrammarParser.UseDefContext) {
         val module = getValueFor(ctx.ident()) as Identifier
-        val names = ctx.ID().map { name -> name.text }
+        val names = ctx.ID().map { name -> Symbol.fromString(name.text) }
         setValueFor(ctx, UseDef(module, names, loc(ctx)))
     }
 
@@ -109,7 +112,7 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitFlavorDef(ctx: PicaGrammarParser.FlavorDefContext) {
-        val name = ctx.ID().text
+        val name = Symbol.fromString(ctx.ID().text)
         val typeParams = ctx.typeParamBlock()?.let { getValueFor(it) as List<TypeVar> }
         val channels = ctx.channelDef().map { getValueFor(it) as ChannelDef }
         setValueFor(ctx, FlavorDef(moduleId, name, typeParams, channels, loc(ctx)))
@@ -119,10 +122,10 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitQuarkDef(ctx: PicaGrammarParser.QuarkDefContext) {
-        val name = ctx.ID().text
+        val name = Symbol.fromString(ctx.ID().text)
         val typeParams = ctx.typeParamBlock()?.let { getValueFor(it) as List<TypeVar> }
         val composes = ctx.composes?.let { getValueFor(it) as List<SType> }.orEmpty()
-        val valueArgs = getValueFor(ctx.argSpec()) as List<Pair<String, SType>>
+        val valueArgs = getValueFor(ctx.argSpec()) as List<TypedIdentifier>
         val channels = ctx.channelDef().map { getValueFor(it) as ChannelDef }
         val slots = ctx.slotDef().map { getValueFor(it) as SlotDef }
         val action = getValueFor(ctx.action()) as Action
@@ -134,7 +137,7 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitSlotDef(ctx: PicaGrammarParser.SlotDefContext) {
-        val name = ctx.ID().text
+        val name = Symbol.fromString(ctx.ID().text)
         val type = getValueFor(ctx.type()) as SType
         val initValue = getValueFor(ctx.expr()) as Expr
         setValueFor(ctx, SlotDef(name, type, initValue, loc(ctx)))
@@ -144,16 +147,47 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitChannelDef(ctx: PicaGrammarParser.ChannelDefContext) {
-        val name = ctx.ID().text
+        val name = Symbol.fromString(ctx.ID().text)
         val type = getValueFor(ctx.type()) as SType
-        setValueFor(ctx, ChannelDef(name, type, loc(ctx)))
+        val dir = getValueFor(ctx.direction()) as ChannelDirection
+        val ctype = ChannelType(type, dir, type.loc)
+        setValueFor(ctx, ChannelDef(name, ctype, loc(ctx)))
+    }
+
+    override fun enterDirIn(ctx: PicaGrammarParser.DirInContext) {
+    }
+
+    override fun exitDirIn(ctx: PicaGrammarParser.DirInContext) {
+        setValueFor(ctx, ChannelDirection.In)
+    }
+
+    override fun enterDirOut(ctx: PicaGrammarParser.DirOutContext) {
+    }
+
+    override fun exitDirOut(ctx: PicaGrammarParser.DirOutContext) {
+        setValueFor(ctx, ChannelDirection.Out)
+    }
+
+    override fun enterDirBoth(ctx: PicaGrammarParser.DirBothContext) {
+    }
+
+    override fun exitDirBoth(ctx: PicaGrammarParser.DirBothContext) {
+        setValueFor(ctx, ChannelDirection.Both)
+    }
+
+    override fun enterDirNone(ctx: PicaGrammarParser.DirNoneContext) {
+
+    }
+
+    override fun exitDirNone(ctx: PicaGrammarParser.DirNoneContext) {
+        setValueFor(ctx, ChannelDirection.Both)
     }
 
     override fun enterIdList(ctx: PicaGrammarParser.IdListContext) {
     }
 
     override fun exitIdList(ctx: PicaGrammarParser.IdListContext) {
-        val ids = ctx.ID().map { it.text }
+        val ids = ctx.ID().map { Symbol.fromString(it.text) }
         setValueFor(ctx, ids)
     }
 
@@ -161,8 +195,7 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitTypeParamBlock(ctx: PicaGrammarParser.TypeParamBlockContext) {
-        val tps = ctx.typeParamSpec().map { getValueFor(it) as Pair<String, List<SType>?> }
-            .map { (name, constraint) -> TypeVar(name, constraint, loc(ctx)) }
+        val tps = ctx.typeParamSpec().map { getValueFor(it) as TypeVar }
         setValueFor(ctx, tps)
     }
 
@@ -170,10 +203,10 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitTypeParamSpec(ctx: PicaGrammarParser.TypeParamSpecContext) {
-        val name = ctx.ID().text
+        val name = Symbol.fromString(ctx.ID().text)
         val constraints = ctx.typeList()?.let {
             getValueFor(it) as List<SType> }
-        setValueFor(ctx, Pair(name, constraints))
+        setValueFor(ctx, TypeVar(name, constraints, loc(ctx)))
     }
 
     override fun enterTypeList(ctx: PicaGrammarParser.TypeListContext) {
@@ -188,7 +221,7 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitArgSpec(ctx: PicaGrammarParser.ArgSpecContext) {
-        val args = ctx.arg()?.let { argList ->  argList.map { arg -> getValueFor(arg) as Pair<String, SType> }}.orEmpty()
+        val args = ctx.arg()?.let { argList ->  argList.map { arg -> getValueFor(arg) as TypedIdentifier }}.orEmpty()
         setValueFor(ctx, args)
     }
 
@@ -196,9 +229,9 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitArg(ctx: PicaGrammarParser.ArgContext) {
-        val name = ctx.ID().text
+        val name = Symbol.fromString(ctx.ID().text)
         val type = getValueFor(ctx.type()) as SType
-        setValueFor(ctx, Pair(name, type))
+        setValueFor(ctx, TypedIdentifier(name, type, loc(ctx)))
     }
 
     override fun enterChannelType(ctx: PicaGrammarParser.ChannelTypeContext) {
@@ -206,14 +239,7 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
 
     override fun exitChannelType(ctx: PicaGrammarParser.ChannelTypeContext) {
         val type = getValueFor(ctx.type()) as SType
-        val dir = if (ctx.i != null) {
-            ChannelDirection.In
-        } else if (ctx.o != null) {
-            ChannelDirection.Out
-        } else {
-            ChannelDirection.Both
-        }
-
+        val dir = getValueFor(ctx.direction()) as ChannelDirection
         setValueFor(ctx, ChannelType(type, dir, loc(ctx)))
     }
 
@@ -239,7 +265,7 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitBosonDef(ctx: PicaGrammarParser.BosonDefContext) {
-        val name = ctx.ID().text
+        val name = Symbol.fromString(ctx.ID().text)
         val typeParams = ctx.typeParamBlock()?.let {
             getValueFor(it) as List<TypeVar>
         }
@@ -258,7 +284,7 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitTupleBosonOption(ctx: PicaGrammarParser.TupleBosonOptionContext) {
-        val name = ctx.ID().text
+        val name = Symbol.fromString(ctx.ID().text)
         val fields = getValueFor(ctx.typeList()) as List<SType>
         setValueFor(ctx, BosonTupleOption(name, fields, loc(ctx)))
     }
@@ -267,8 +293,8 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitStructBosonOption(ctx: PicaGrammarParser.StructBosonOptionContext) {
-        val name = ctx.ID().text
-        val fields = getValueFor(ctx.typedIdList()) as List<Pair<String, SType>>
+        val name = Symbol.fromString(ctx.ID().text)
+        val fields = getValueFor(ctx.typedIdList()) as List<TypedIdentifier>
         setValueFor(ctx, BosonStructOption(name, fields, loc(ctx)))
     }
 
@@ -276,7 +302,7 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitTypedIdList(ctx: PicaGrammarParser.TypedIdListContext) {
-        val ids = ctx.typedId().map { getValueFor(it) as Pair<String, SType> }
+        val ids = ctx.typedId().map { getValueFor(it) as TypedIdentifier }
         setValueFor(ctx, ids)
     }
 
@@ -284,9 +310,9 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitTypedId(ctx: PicaGrammarParser.TypedIdContext) {
-        val name = ctx.ID().text
+        val name = Symbol.fromString(ctx.ID().text)
         val type = getValueFor(ctx.type()) as SType
-        setValueFor(ctx, Pair(name, type))
+        setValueFor(ctx, TypedIdentifier(name, type, loc(ctx)))
     }
 
     override fun enterLoopAction(ctx: PicaGrammarParser.LoopActionContext) {
@@ -309,7 +335,7 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
 
     override fun exitReceiveAction(ctx: PicaGrammarParser.ReceiveActionContext) {
         val channel = getValueFor(ctx.chan) as Expr
-        val opts = ctx.onClause().map { getValueFor(it) as Pair<BosonPattern, Action> }
+        val opts = ctx.onClause().map { getValueFor(it) as ReceiveOption }
         setValueFor(ctx, ReceiveAction(channel, opts, loc(ctx)))
     }
 
@@ -392,7 +418,7 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitVardefStmt(ctx: PicaGrammarParser.VardefStmtContext) {
-        val name = ctx.ID().text
+        val name = Symbol.fromString(ctx.ID().text)
         val type = getValueFor(ctx.type()) as SType
         val initValue = getValueFor(ctx.expr()) as Expr
         setValueFor(ctx, VarDefAction(name, type, initValue, loc(ctx)))
@@ -402,7 +428,7 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitForAction(ctx: PicaGrammarParser.ForActionContext) {
-        val idx = ctx.ID().text
+        val idx = Symbol.fromString(ctx.ID().text)
         val coll = getValueFor(ctx.expr()) as Expr
         val act = getValueFor(ctx.action()) as Action
         setValueFor(ctx, ForAction(idx, coll, act, loc(ctx)))
@@ -414,19 +440,19 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     override fun exitOnClause(ctx: PicaGrammarParser.OnClauseContext) {
         val pat = getValueFor(ctx.pattern()) as BosonPattern
         val act = getValueFor(ctx.action()) as Action
-        setValueFor(ctx, Pair(pat, act))
+        setValueFor(ctx, ReceiveOption(pat, act, loc(ctx)))
     }
 
     override fun enterPattern(ctx: PicaGrammarParser.PatternContext) {
     }
 
     override fun exitPattern(ctx: PicaGrammarParser.PatternContext) {
-        val optionName = ctx.ID().text
+        val optionName = Symbol.fromString(ctx.ID().text)
         if (ctx.tuplePattern() != null) {
-            val fields = getValueFor(ctx.tuplePattern()) as List<String>
+            val fields = getValueFor(ctx.tuplePattern()) as List<Symbol>
             setValueFor(ctx, BosonTuplePattern(optionName, fields, loc(ctx)))
         } else {
-            val fields = getValueFor(ctx.structPattern()) as List<Pair<String, String>>
+            val fields = getValueFor(ctx.structPattern()) as List<BosonPatternBinding>
             setValueFor(ctx, BosonStructPattern(optionName, fields, loc(ctx)))
         }
     }
@@ -449,9 +475,9 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitKeyedPattern(ctx: PicaGrammarParser.KeyedPatternContext) {
-        val structField = ctx.k.text
-        val boundVar = ctx.v.text
-        setValueFor(ctx, Pair(structField, boundVar))
+        val structField = Symbol.fromString(ctx.k.text)
+        val boundVar = Symbol.fromString(ctx.v.text)
+        setValueFor(ctx, BosonPatternBinding(structField, boundVar, loc(ctx)))
     }
 
     override fun enterDotLvalue(ctx: PicaGrammarParser.DotLvalueContext) {
@@ -460,7 +486,7 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     override fun exitDotLvalue(ctx: PicaGrammarParser.DotLvalueContext) {
         val base = getValueFor(ctx.lvalue()) as LValExpr
         if (ctx.ID() != null) {
-            val field = ctx.ID().text
+            val field = Symbol.fromString(ctx.ID().text)
             setValueFor(ctx, FieldLValueExpr(base, field, loc(ctx)))
         } else {
             val idx = Integer.parseInt(ctx.LIT_INT().text)
@@ -585,7 +611,7 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
 
     override fun exitBosonStructExpr(ctx: PicaGrammarParser.BosonStructExprContext) {
         val name = getValueFor(ctx.ident()) as Identifier
-        val fields = getValueFor(ctx.keyValueList()) as List<Pair<String, Expr>>
+        val fields = getValueFor(ctx.keyValueList()) as List<FieldValue>
         setValueFor(ctx, BosonStructExpr(name, fields, loc(ctx)))
     }
 
@@ -637,7 +663,7 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitKeyValueList(ctx: PicaGrammarParser.KeyValueListContext) {
-        val pairs = ctx.keyValuePair().map { getValueFor(it) as Pair<String, Expr> }
+        val pairs = ctx.keyValuePair().map { getValueFor(it) as FieldValue }
         setValueFor(ctx, pairs)
     }
 
@@ -645,9 +671,9 @@ class AstParser(val moduleName: String): PicaGrammarListener  {
     }
 
     override fun exitKeyValuePair(ctx: PicaGrammarParser.KeyValuePairContext) {
-        val key = ctx.ID().text
+        val key = Symbol.fromString(ctx.ID().text)
         val value = getValueFor(ctx.expr()) as Expr
-        setValueFor(ctx, Pair(key, value))
+        setValueFor(ctx, FieldValue(key, value, loc(ctx)))
     }
 
     override fun enterExprList(ctx: PicaGrammarParser.ExprListContext) {

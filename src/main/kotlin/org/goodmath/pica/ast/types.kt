@@ -15,11 +15,12 @@
 
 package org.goodmath.pica.ast
 
+import org.goodmath.pica.util.Symbol
 import org.goodmath.pica.util.Twist
 
 
 // SType => Syntactic Type
-abstract class SType(val typeArgs: List<SType>?, loc: Location): KAstNode(loc) {
+abstract class SType(val typeArgs: List<SType>?, loc: Location): AstNode(loc) {
 }
 
 enum class ChannelDirection {
@@ -42,13 +43,13 @@ class NamedType(val typeId: Identifier, typeArgs: List<SType>?, loc: Location): 
             Twist.opt(typeArgs?.let { Twist.arr("typeArgs", it) }))
 }
 
-class TypeVar(val name: String,
+class TypeVar(val name: Symbol,
               val constraint: List<SType>?,
               loc: Location): SType(null, loc) {
 
     override fun twist(): Twist =
-        Twist.obj("TypeVar",
-            Twist.attr("name", name),
+        Twist.obj("Type::TypeVar",
+            Twist.attr("name", name.toString()),
             Twist.opt(constraint?.let { Twist.arr("constraint", it)}))
 
 }

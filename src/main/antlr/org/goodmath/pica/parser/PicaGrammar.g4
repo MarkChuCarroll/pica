@@ -16,7 +16,7 @@ grammar PicaGrammar;
 
 @header { package org.goodmath.pica.parser; }
 
-module:
+hadron:
   ( useDef )*
   ( definition )*
 ;
@@ -33,28 +33,36 @@ definition:
 ;
 
 flavorDef:
-   'flavor' (typeParamBlock)? ID ('composes' composes=typeList)? 'is'
-      channelDef*
-   'end' ('@flavor')?
+   'flavor' (typeParamBlock)? ID ('composes'  composes=typeList)? 'is'
+         channelDef*
+   'end' ( '@flavor' )?
+
 ;
 
 quarkDef:
-   'quark' (typeParamBlock)? ID  argSpec ('composes' composes=typeList)? 'is'
+   'quark' (typeParamBlock)? ID ('composes' composes=typeList)?
+      ('args' argSpec)? 'is'
       ( channelDef
       | slotDef
       )*
       'do' action
-   'end' ('@quark')?
+      'end' ('@quark')?
  ;
 
 slotDef:
-   'var' ID ':' type '=' expr
+   'slot' ID ':' type '=' expr
 ;
 
 channelDef:
-    'chan' ID ':' type
+    'chan' ID ':' direction type
 ;
 
+direction:
+   'in'   # dirIn
+| 'out'   # dirOut
+| 'both'  # dirBoth
+|         # dirNone
+;
 
 idList:
    ID (',' ID)*
@@ -81,7 +89,7 @@ arg:
 ;
 
 type:
-   'chan' ( '(' ( i='in' | o='out' ) ')' )?  type # channelType
+   'chan' direction  type # channelType
 |   ( typeArgBlock )? ident   # namedType
 ;
 
@@ -97,18 +105,17 @@ typeArgBlock:
  end
 */
 bosonDef:
-   'boson' (typeParamBlock)? ID 'is' bosonBody 'end' ('@boson')?
+   'boson' (typeParamBlock)? ID 'is' bosonBody 'end' ( '@boson' )?
 ;
 
 
 bosonBody:
-   bosonOption ('or' bosonOption)*
+   bosonOption (',' bosonOption)*
 ;
 
 bosonOption:
    ID '(' typeList ')' # tupleBosonOption
 | ID '{' typedIdList  '}' # structBosonOption
-
 ;
 
 typedIdList:
@@ -120,26 +127,26 @@ typedId:
 ;
 
 action:
-  action ('|' action)+   # choiceAction
-| action (';' action)+   # sequenceAction
-| action ('&' action)+   # parAction
-| 'spawn' '(' action ')' # spawnAction
+  'one' '{' action (',' action)+ '}'  # choiceAction
+| 'seq' '{' action (',' action)+ '}'  # sequenceAction
+| 'par' '{' action (',' action)+ '}'  # parAction
+| 'spawn' action  # spawnAction
 | '(' action ')'      # parenAction
 | lvalue '=' expr     # assignAction
 | 'send' chan=expr  '(' value=expr ')' # sendAction
-| 'receive' chan=expr 'do'
+| 'receive' chan=expr '{'
         onClause+
-      'end' ('@receive')?  # receiveAction
+      '}'  # receiveAction
 | 'var' ID ':' type  '=' expr         # vardefStmt// variable definition.
-| 'if' cond=expr 'then' t=action 'else' f=action 'end' ('@if')?  # ifAction
-| 'while' expr 'do' action 'end' ('@while')?                 # whileAction
-| 'repeat' action 'end' ('@repeat')? # loopAction
-| 'for' ID 'in' expr 'do' action  'end' ('@for')?           # forAction
+| 'if' '(' cond=expr  ')'  t=action  'else'  f=action    # ifAction
+| 'while' '(' expr ')'  action                # whileAction
+| 'repeat' action  # loopAction
+| 'for' ID 'in' expr 'do' action  'end' ('@action')?         # forAction
 | 'exit'  # exitAction
 ;
 
 onClause:
-   'on' pattern 'do' action 'end' ('@on')?
+   'on' pattern 'do' action
 ;
 
 pattern:
@@ -182,8 +189,8 @@ expr:
   | LIT_CHAR # litCharExpr
   | type '[' exprList ']'  # listExpr
   | lvalue # lvalueExpr
-  | 'in' '(' expr  ')' # narrowChanToInExpr
-  | 'out' '(' expr ')' # narrowChanToOutExpr
+  | expr '#in'   # narrowChanToInExpr
+  | expr '#out' # narrowChanToOutExpr
 ;
 
 keyValueList:

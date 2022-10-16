@@ -28,8 +28,13 @@ sealed class Twist: Twistable {
         this.render(sb, 0)
         return sb.toString()
     }
+
+
+
     override fun twist(): Twist = this
     abstract fun render(sb: StringBuilder, indent: Int)
+
+    abstract fun renderCode(i: Int): String
     companion object {
         fun obj(name: String, vararg children: Twistable): Twist {
             return ObjectNode(name, children.toList())
@@ -73,6 +78,12 @@ class ObjectNode(val name: String, val children: List<Twistable>): Twist() {
             c.twist().render(sb, indent + 1)
         }
     }
+
+    override fun renderCode(i: Int): String =
+        "  ".repeat(i) +
+                "Twist.obj(\"${name}\",\n" +
+                children.map { it.twist().renderCode(i+1) }.joinToString("") +
+                "  ".repeat(i) + ")\n"
 }
 
 class ArrayNode(val name: String, val children: List<Twistable>): Twist() {
@@ -85,12 +96,27 @@ class ArrayNode(val name: String, val children: List<Twistable>): Twist() {
             }
         }
     }
+
+    override fun renderCode(i: Int): String {
+        return if (children.isNotEmpty()) {
+            "  ".repeat(i) +
+                    "Twist.arr(\"${name}\",\n" +
+                    children.map { it.twist().renderCode(i + 1) }.joinToString("") +
+                    "  ".repeat(i) + ")\n"
+        } else {
+            ""
+        }
+    }
 }
 
 class AttributeNode(val name: String, val value: String): Twist() {
     override fun render(sb: StringBuilder, indent: Int) {
         sb.indent(indent)
         sb.append("$name = $value\n")
+    }
+
+    override fun renderCode(i: Int): String {
+        return "  ".repeat(i) + "Twist.attr(\"$name\", \"$value\"),\n"
     }
 }
 
@@ -100,6 +126,12 @@ class ValueNode(val name: String, val value: Twistable): Twist(){
         sb.append("$name:\n")
         value.twist().render(sb, indent+1)
     }
+
+    override fun renderCode(i: Int): String {
+        return "  ".repeat(i) + "Twist.value(\"$name\",\n" + value.twist().renderCode(i+1) +
+                "  ".repeat(i) +
+                ")\n"
+    }
 }
 
 class LeafNode(val name: String): Twist() {
@@ -107,11 +139,19 @@ class LeafNode(val name: String): Twist() {
         sb.indent(indent)
         sb.append(name).append("\n")
     }
+
+    override fun renderCode(i: Int): String {
+        return "  ".repeat(i) + "Twist.leaf(\"$name\")\n"
+    }
 }
 
 class OptNode(val t: Twistable?): Twist() {
     override fun render(sb: StringBuilder, indent: Int) {
         t?.twist()?.render(sb, indent)
+    }
+
+    override fun renderCode(i: Int): String {
+        return t?.twist()?.renderCode(i) ?: ""
     }
 
 }

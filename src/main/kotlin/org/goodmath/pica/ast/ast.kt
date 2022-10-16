@@ -15,6 +15,7 @@
 
 package org.goodmath.pica.ast
 
+import org.goodmath.pica.util.Symbol
 import org.goodmath.pica.util.Twist
 import org.goodmath.pica.util.Twistable
 
@@ -24,28 +25,28 @@ data class Location(val source: String, val line: Int, val column: Int) {
     }
 }
 
-abstract class KAstNode(val loc: Location): Twistable {
+abstract class AstNode(val loc: Location): Twistable {
 }
 
-class Identifier(val module: Identifier?, val name: String, loc: Location): KAstNode(loc) {
+class Identifier(val hadronId: Identifier?, val name: Symbol, loc: Location): AstNode(loc) {
     override fun twist(): Twist =
-        if (module == null) {
+        if (hadronId == null) {
             Twist.obj(
                 "Ident",
-                Twist.attr("name", name))
-        } else{
+                Twist.attr("name", name.toString()))
+        } else {
             Twist.obj(
                 "Ident",
-                Twist.value("module", module),
-                Twist.attr("name", name)
+                Twist.value("hadron", hadronId),
+                Twist.attr("name", name.toString())
             )
     }
 
     override fun toString(): String {
-        return if (module != null) {
-            "$module::$name"
+        return if (hadronId != null) {
+            "$hadronId::${name.name}"
         } else {
-            name
+            name.name
         }
     }
 
@@ -53,7 +54,7 @@ class Identifier(val module: Identifier?, val name: String, loc: Location): KAst
         fun fromList(parts: List<String>, loc: Location): Identifier {
             var id: Identifier? = null
             for (p in parts) {
-                id = Identifier(id, p, loc)
+                id = Identifier(id, Symbol.fromString(p), loc)
             }
             return id!!
         }
@@ -64,19 +65,19 @@ class Identifier(val module: Identifier?, val name: String, loc: Location): KAst
     }
 }
 
-class UseDef(val moduleId: Identifier, val names: List<String>, loc: Location): KAstNode(loc) {
+class UseDef(val hadronId: Identifier, val names: List<Symbol>, loc: Location): AstNode(loc) {
     override fun twist(): Twist =
         Twist.obj(
             "Use",
-            Twist.attr("module", moduleId.toString()),
-            Twist.arr("names", names.map { Twist.leaf(it) })
+            Twist.attr("hadron", hadronId.toString()),
+            Twist.arr("names", names.map { Twist.leaf(it.toString()) })
         )
 }
 
-class PicaModule(val id: Identifier, val imports: List<UseDef>, val defs: List<Definition>):
-        KAstNode(Location(id.toString(), 0, 0)) {
+class HadronDefinition(val id: Identifier, val imports: List<UseDef>, val defs: List<Definition>):
+        AstNode(Location(id.toString(), 0, 0)) {
     override fun twist(): Twist =
-        Twist.obj("PicaModule",
+        Twist.obj("HadronDefinition",
             Twist.attr("id", id.toString()),
             Twist.arr("uses", imports),
             Twist.arr("defs", defs))

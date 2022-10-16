@@ -14,9 +14,10 @@
  */
 package org.goodmath.pica.ast
 
+import org.goodmath.pica.util.Symbol
 import org.goodmath.pica.util.Twist
 
-abstract class Expr(loc: Location) : KAstNode(loc)
+abstract class Expr(loc: Location) : AstNode(loc)
 
 enum class Operator {
     And, Or, Eq, NotEq, Greater, GreaterEq, Less, LessEq, Plus, Minus, Times, Div, Modulo;
@@ -53,19 +54,23 @@ class OperatorExpr(val op: Operator, val operands: List<Expr>, loc: Location) : 
         )
 }
 
+class FieldValue(val name: Symbol, val value: Expr, loc: Location): AstNode(loc) {
+    override fun twist(): Twist =
+        Twist.obj("Expr::Boson::FieldValue",
+            Twist.attr("name", name.toString()),
+            Twist.value("value", value))
+}
+
 class BosonStructExpr(
     val bosonOptionName: Identifier,
-    val fields: List<Pair<String, Expr>>,
+    val fields: List<FieldValue>,
     loc: Location
 ) : Expr(loc) {
     override fun twist(): Twist =
         Twist.obj("Expr::Boson::Struct",
             Twist.attr("name", bosonOptionName.toString()),
-            Twist.arr("fields",
-                fields.map { (name, value) ->
-                    Twist.obj("field",
-                        Twist.attr("name", name),
-                        Twist.value("value", value))}))
+            Twist.arr("fields", fields))
+
 }
 
 class BosonTupleExpr(val bosonOptionName: Identifier, val fields: List<Expr>, loc: Location) : Expr(loc) {
@@ -139,16 +144,16 @@ class IdLValueExpr(val id: Identifier, loc: Location) : LValExpr(loc) {
 
 }
 
-class FieldLValueExpr(val baseLValue: LValExpr, val field: String, loc: Location) : LValExpr(loc) {
+class FieldLValueExpr(val baseLValue: LValExpr, val field: Symbol, loc: Location) : LValExpr(loc) {
     override fun twist(): Twist =
         Twist.obj("Expr::LVal::Field",
             Twist.value("base", baseLValue),
-            Twist.attr("field", field))
+            Twist.attr("field", field.toString()))
 }
 
 class IndexedLValueExpr(val baseLValue: LValExpr, val idx: Int, loc: Location) : LValExpr(loc) {
     override fun twist(): Twist =
-        Twist.obj("Expr::LVal::Field",
+        Twist.obj("Expr::LVal::Indexed",
             Twist.value("base", baseLValue),
             Twist.attr("index", idx.toString()))
 }
