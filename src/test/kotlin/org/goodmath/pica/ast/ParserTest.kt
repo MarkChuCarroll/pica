@@ -19,8 +19,7 @@ class ParserTest {
     @Test
     fun testParseQuark() {
         val input: String = """
-            quark [T]MyQuark composes a::b
-                            args (i: Int) is
+            quark [T]MyQuark (i: Int) composes a::b is
                 chan C : F
                   slot sl: Int = i
                do 
@@ -388,8 +387,7 @@ class ParserTest {
     @Test
     fun testParseChannelType() {
         val input = """
-            quark [T]MyQuark composes a::b 
-               args (i: Int) is
+            quark [T]MyQuark(i: Int)  composes a::b is 
                chan C : F
                slot sl: Int = i
                do 
@@ -488,8 +486,7 @@ class ParserTest {
     @Test
     fun testParseQuarkWithParAndSel() {
         val input = """
-            quark [T] MyQuark composes a::b 
-               args(i: Int) is
+            quark [T] MyQuark(i: Int) composes a::b is
                chan C : F 
                slot sl: Int = i
                do 

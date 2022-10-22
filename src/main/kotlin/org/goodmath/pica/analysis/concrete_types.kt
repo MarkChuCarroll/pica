@@ -2,10 +2,13 @@ package org.goodmath.pica.analysis
 
 import org.goodmath.pica.LocalScope
 import org.goodmath.pica.RootScope
+import org.goodmath.pica.Scope
 import org.goodmath.pica.ast.*
+import org.goodmath.pica.util.PicaErrorLog
 import org.goodmath.pica.util.Symbol
 import org.goodmath.pica.util.Twist
 import org.goodmath.pica.util.Twistable
+import java.util.Properties
 
 /**
  * How are parametric types going to work in here?
@@ -24,111 +27,69 @@ interface Bindable<T> {
 }
 
 abstract class ConcreteType(): Twistable, Bindable<ConcreteType> {
-
-    /**
-     * Check if the type params are valid for this type.
-     * This means checking that all constraints are satisfied.
-     */
-    fun validTypeParams(): Boolean {
-        TODO()
-    }
-
+    abstract val scope: Scope
 
     /**
      * Check if this concrete type can satisfy a type constraint.
+     * To do this, we may need to be able to instantiate type arguments,
+     * which requires a scope in which they can be looked up.
      */
-    abstract fun canSatisfy(constraint: SType): Boolean
+    abstract fun canSatisfy(constraint: SType, inScope: Scope): Boolean
+
 
     companion object {
-        fun getConcreteTypeFor(t: SType): ConcreteType {
-            TODO()
+
+        fun instantiate(t: SType, scope: Scope): ConcreteType {
+            if (t is NamedType) {
+                val def = scope.getDefinition(t.typeId)
+                if (def != null) {
+                    val typeArgs = t.typeArgs?.map { instantiate(it, scope) }.orEmpty()
+                    return when (def) {
+                        is QuarkDefinition -> ConcreteQuarkType(def, typeArgs)
+                        is BosonDefinition -> ConcreteBosonType(def, typeArgs)
+                        is FlavorDef -> ConcreteFlavorType(def, typeArgs)
+                        else -> {
+                            throw PicaErrorLog.logException("Invalid declaration type.", null, def)
+                        }
+                    }
+                } else { // If we have a named type, and it doesn't reference a definition,
+                    // then either it's an undefined name (which should be an error), or it's
+                    // a type variable. If the latter, then it should appear in the types of
+                    // the scope.
+                    val type =
+                        scope.getType(t.typeId) ?: throw PicaErrorLog.logException("Undefined type name ${t.typeId}")
+                    return type
+
+                }
+            } else {
+                // It's a channel type.
+                val chType = t as ChannelType
+                return ConcreteChannelType(chType, chType.dir,
+                    ConcreteType.instantiate(chType.messageType, scope), scope)
+            }
         }
-
-        fun getConcreteTypeFor(t: SType, typeArgs: List<ConcreteType>): ConcreteType {
-            TODO()
-        }
     }
-}
 
-data class ConcreteSlot(val name: Symbol, val type: ConcreteType): Twistable, Bindable<ConcreteSlot> {
-    override fun twist(): Twist =
-        Twist.obj("ConcreteSlot",
-        Twist.attr("name", name.toString()),
-            Twist.value("type", type))
 
-    override fun bind(bindings: Map<TypeVar, ConcreteType>): ConcreteSlot {
-        return ConcreteSlot(name, type.bind(bindings))
-    }
 
 }
 
-data class ConcreteChannel(val name: Symbol, val type: ConcreteType): Twistable, Bindable<ConcreteChannel> {
-    override fun twist(): Twist =
-        Twist.obj("ConcreteChannel",
-            Twist.attr("name", name.toString()),
-            Twist.value("type", type))
-
-    override fun bind(bindings: Map<TypeVar, ConcreteType>): ConcreteChannel {
-        return ConcreteChannel(name, type.bind(bindings))
-    }
-}
-
-class ConcreteQuarkType(
-    val quarkDef: QuarkDefinition,
-    val typeArgs: List<ConcreteType>,
-    val slots: List<ConcreteSlot>,
-    val channels: List<ConcreteChannel>
-): ConcreteType() {
-
-    val scope = LocalScope(RootScope.getHadronScope(quarkDef.hadronId)!!, quarkDef)
-
-    /**
-     * Two defined types are equal if they're the same object, or if they're built
-     * from the same definition and the same type args.
-     */
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        return  other is ConcreteQuarkType && quarkDef == other.quarkDef && typeArgs == other.typeArgs
-    }
-
-    /**
-     * Hashcode needs to match our equality def above: only consider
-     * typeargs and def.
-     */
-    override fun hashCode(): Int {
-        var result = quarkDef.hashCode()
-        result = 31 * result + typeArgs.hashCode()
-        return result
-    }
-
-    override fun bind(bindings: Map<TypeVar, ConcreteType>): ConcreteType {
-        TODO("Not yet implemented")
-    }
-
-    override fun canSatisfy(constraint: SType): Boolean {
-        TODO("Not yet implemented")
-    }
-
-
-    override fun twist(): Twist =
-        Twist.obj("ConcreteType::Quark",
-            Twist.attr("id", quarkDef.id.toString()),
-            Twist.value("quarkDef", quarkDef),
-            Twist.opt(typeArgs ?.let { Twist.arr("typeArgs", it) }))
-
-//    fun implements(flavor: ConcreteFlavorType): Boolean {
-//        TODO()
-//    }
-
-}
 
 
 class ConcreteFlavorType(
     val flavorDef: FlavorDef,
-    val typeArgs: List<ConcreteType>,
-    val channels: List<ConcreteChannel>
-): ConcreteType() {
-    override fun canSatisfy(constraint: SType): Boolean {
+    val typeArgs: List<ConcreteType>): ConcreteType() {
+
+    override val scope by lazy {
+        TODO()
+    }
+
+    val channels: List<ConcreteChannel> by lazy {
+        TODO()
+    }
+
+
+    override fun canSatisfy(constraint: SType, inScope: Scope): Boolean {
         TODO("Not yet implemented")
     }
 
@@ -145,79 +106,32 @@ class ConcreteFlavorType(
             this
         } else {
             return ConcreteFlavorType(flavorDef,
-                typeArgs.map { t -> t.bind(bindings)},
-                channels.map { c -> c.bind(bindings) }
+                typeArgs.map { t -> t.bind(bindings)}
             )
         }
     }
 }
 
-abstract class ConcreteBosonOption(val name: Symbol): Bindable<ConcreteBosonOption> {
-}
 
-class ConcreteBosonTuple(name: Symbol, val fields: List<ConcreteType>): ConcreteBosonOption(name) {
-    override fun bind(bindings: Map<TypeVar, ConcreteType>): ConcreteBosonTuple {
-        return ConcreteBosonTuple(name, fields.map { it.bind(bindings) })
-    }
-}
-
-class ConcreteBosonStruct(name: Symbol, val fields: Map<Symbol, ConcreteType>): ConcreteBosonOption(name) {
-    override fun bind(bindings: Map<TypeVar, ConcreteType>): ConcreteBosonStruct {
-        return ConcreteBosonStruct(name, fields.map { (name, type) -> Pair(name, type.bind(bindings)) }.toMap())
-    }
-}
-
-
-class ConcreteBosonType(
-    val bosonDef: BosonDefinition,
-    val typeArgs: List<ConcreteType>,
-    val options: List<ConcreteBosonOption>
-): ConcreteType() {
-
-    /**
-     * Two defined types are equal if they're the same object, or if they're built
-     * from the same definition and the same type args.
-     */
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        return  other is ConcreteBosonType && bosonDef == other.bosonDef && typeArgs == other.typeArgs
-    }
-
-    /**
-     * Hashcode needs to match our equality def above: only consider
-     * typeargs and def.
-     */
-    override fun hashCode(): Int {
-        var result = bosonDef.hashCode()
-        result = 31 * result + typeArgs.hashCode()
-        return result
-    }
-
-
-    override fun bind(bindings: Map<TypeVar, ConcreteType>): ConcreteType {
-        return if (bosonDef.typeParams == null || bosonDef.typeParams.isEmpty()) {
-            this
-        } else {
-            ConcreteBosonType(bosonDef, typeArgs.map { it.bind(bindings)}, options.map { it.bind(bindings) })
-        }
-    }
-
-    override fun canSatisfy(constraint: SType): Boolean {
+class ConcreteChannelType(val def: ChannelType,
+                          val direction: ChannelDirection,
+                          val msgType: ConcreteType, override val scope: Scope): ConcreteType() {
+    override fun canSatisfy(constraint: SType, inScope: Scope): Boolean {
         TODO("Not yet implemented")
     }
 
     override fun twist(): Twist =
-        Twist.obj("ConcreteType::Boson",
-            Twist.attr("id", bosonDef.id.toString()),
-            Twist.value("bosonDef", bosonDef),
-            Twist.opt(if (typeArgs.isNotEmpty()) {
-                Twist.arr("typeArgs", typeArgs)
-            } else {
-                null
-            }))
+        Twist.obj("ConcreteType::Channel",
+            Twist.attr("direction", direction.toString()),
+            Twist.value("msgType", msgType)
+        )
+
+    override fun bind(bindings: Map<TypeVar, ConcreteType>): ConcreteChannelType =
+        ConcreteChannelType(def, direction, msgType.bind(bindings), scope)
+
 }
 
-class ConcreteTypeVar(val name: Symbol, val def: TypeVar): ConcreteType() {
+class ConcreteTypeVar(val name: Symbol, val def: TypeVar, override val scope: Scope): ConcreteType() {
 
     val id = "$name{${nextIndex()}}"
 
@@ -229,8 +143,8 @@ class ConcreteTypeVar(val name: Symbol, val def: TypeVar): ConcreteType() {
         return bindings[def] ?: this
     }
 
-    override fun canSatisfy(constraint: SType): Boolean {
-        return (def.constraint != null && constraint in  def.constraint)
+    override fun canSatisfy(constraint: SType, inScope: Scope): Boolean {
+        TODO("Not yet implemented")
     }
 
     override fun twist(): Twist =

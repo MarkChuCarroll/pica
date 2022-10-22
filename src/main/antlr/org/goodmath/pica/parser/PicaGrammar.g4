@@ -40,8 +40,9 @@ flavorDef:
 ;
 
 quarkDef:
-   'quark' (typeParamBlock)? ID ('composes' composes=typeList)?
-      ('args' argSpec)? 'is'
+   'quark' (typeParamBlock)? ID (  argSpec )?
+   ('composes' composes=typeList)?
+   'is'
       ( channelDef
       | slotDef
       )*
@@ -97,13 +98,7 @@ typeArgBlock:
    '[' type ( ',' type )* ']'
 ;
 
-/*
- Example:
 
- boson [T]List is
-   Cons(T, [T]List) or Nil
- end
-*/
 bosonDef:
    'boson' (typeParamBlock)? ID 'is' bosonBody 'end' ( '@boson' )?
 ;

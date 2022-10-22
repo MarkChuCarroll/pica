@@ -10,6 +10,9 @@ import org.goodmath.pica.util.Symbol
 abstract class Scope {
     abstract fun getDefinition(name: Identifier): Definition?
     abstract fun getType(name: Identifier): ConcreteType?
+
+    abstract fun setType(name: Symbol, type: ConcreteType)
+
 }
 
 object RootScope: Scope() {
@@ -33,8 +36,16 @@ object RootScope: Scope() {
         }
     }
 
+    override fun setType(name: Symbol, type: ConcreteType) {
+        types.put(name, type)
+    }
+
     fun getHadronScope(name: Identifier): HadronScope? {
         return scopes[name]
+    }
+
+    fun setHadronScope(name: Identifier, scope: HadronScope) {
+        scopes[name] = scope
     }
 
 }
@@ -42,27 +53,57 @@ object RootScope: Scope() {
 class HadronScope(val id: Identifier, val hadron: HadronDefinition): Scope() {
     val defs = HashMap<Symbol, Definition>()
     val types = HashMap<Symbol, ConcreteType>()
+    val imports = HashMap<Symbol, Identifier>()
+
+    init {
+        // Add the imports to the namespace.
+        for (imp in hadron.imports) {
+            for (name in imp.names) {
+                imports[name] = Identifier(hadron.id, name, imp.loc)
+            }
+        }
+    }
 
     override fun getDefinition(name: Identifier): Definition? {
-        if (name.hadronId == null) {
-            return defs[name.name]?:RootScope.getDefinition(name)
-        } else if (name.hadronId == id) {
-            return defs[name.name]
-        } else {
-            return RootScope.getDefinition(name)
+        return when (name.hadronId) {
+            null -> {
+                imports[name.name]
+                    ?.let { getDefinition(it) }
+                    ?: defs[name.name]
+            }
+            id -> {
+                defs[name.name]
+            }
+            else -> {
+                RootScope.getDefinition(name)
+            }
         }
     }
 
     override fun getType(name: Identifier): ConcreteType? {
-        if (name.hadronId == null) {
-            return types[name.name]?:RootScope.getType(name)
-        } else if (name.hadronId == id) {
-            return types[name.name]
-        } else {
-            return RootScope.getType(name)
+        return when (name.hadronId) {
+            null -> {
+                imports[name.name]?.let { getType(it) }
+                    ?: types[name.name] ?: RootScope.getType(name)
+            }
+            id -> {
+                types[name.name]
+            }
+            else -> {
+                RootScope.getType(name)
+            }
         }
 
     }
+
+    override fun setType(name: Symbol, type: ConcreteType) {
+        types[name] = type
+    }
+
+    private fun addImportedId(name: Symbol, referencedId: Identifier) {
+        imports[name] = referencedId
+    }
+
 }
 
 class LocalScope(val parent: Scope, val origin: AstNode): Scope() {
@@ -92,5 +133,10 @@ class LocalScope(val parent: Scope, val origin: AstNode): Scope() {
             parent.getType(name)
         }
     }
+
+    override fun setType(name: Symbol, type: ConcreteType) {
+        types.put(name, type)
+    }
+
 
 }
