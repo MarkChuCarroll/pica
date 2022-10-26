@@ -18,7 +18,7 @@ grammar QuarkPlasmaAssembly;
 
 module:
    '==Headers'
-   'module' '=' id=ident ';'
+   'hadron' '=' id=ident ';'
    ('requires' '=' '[' reqs=idList ']' ';')?
    ( metaTag ';' )*
    '--'

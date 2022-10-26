@@ -6,8 +6,10 @@ import org.goodmath.pica.ast.Definition
 import org.goodmath.pica.ast.Identifier
 import org.goodmath.pica.ast.HadronDefinition
 import org.goodmath.pica.util.Symbol
+import org.goodmath.pica.util.Twist
+import org.goodmath.pica.util.Twistable
 
-abstract class Scope {
+abstract class Scope: Twistable {
     abstract fun getDefinition(name: Identifier): Definition?
     abstract fun getType(name: Identifier): ConcreteType?
 
@@ -48,6 +50,16 @@ object RootScope: Scope() {
         scopes[name] = scope
     }
 
+    override fun twist(): Twist =
+        Twist.obj("RootScope",
+            Twist.arr("Hadrons",
+                scopes.values.toList()
+            ),
+            Twist.arr("DefinedNames",
+                defs.values.toList()
+            )
+        )
+
 }
 
 class HadronScope(val id: Identifier, val hadron: HadronDefinition): Scope() {
@@ -61,6 +73,9 @@ class HadronScope(val id: Identifier, val hadron: HadronDefinition): Scope() {
             for (name in imp.names) {
                 imports[name] = Identifier(hadron.id, name, imp.loc)
             }
+        }
+        for (def in hadron.defs) {
+            defs.put(def.name, def)
         }
     }
 
@@ -100,6 +115,16 @@ class HadronScope(val id: Identifier, val hadron: HadronDefinition): Scope() {
         types[name] = type
     }
 
+    override fun twist(): Twist =
+        Twist.obj("Scope::Hadron",
+            Twist.arr("Imports",
+                imports.values.toList()
+            ),
+            Twist.arr("Definitions",
+                defs.values.toList()
+            )
+        )
+
     private fun addImportedId(name: Symbol, referencedId: Identifier) {
         imports[name] = referencedId
     }
@@ -138,5 +163,6 @@ class LocalScope(val parent: Scope, val origin: AstNode): Scope() {
         types.put(name, type)
     }
 
-
+    override fun twist(): Twist =
+        Twist.leaf("LocalScope")
 }

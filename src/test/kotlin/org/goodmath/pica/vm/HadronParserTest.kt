@@ -9,7 +9,7 @@ class HadronParserTest {
     fun testParseHadron() {
         val input = """
         ==Headers
-        module = foo::bar;
+        hadron = foo::bar;
         requires = [a::b, b::c, c::d::e];
         version = [0, 0, 0, 0, 1];
         author = "Me";
@@ -39,19 +39,19 @@ class HadronParserTest {
             obj Vm::Hadron:
                requires = array:
                   obj Ident:
-                     module:
+                     hadron:
                         obj Ident:
                            name = a
                      name = b
                   obj Ident:
-                     module:
+                     hadron:
                         obj Ident:
                            name = b
                      name = c
                   obj Ident:
-                     module:
+                     hadron:
                         obj Ident:
-                           module:
+                           hadron:
                               obj Ident:
                                  name = c
                            name = d

@@ -21,7 +21,6 @@ hadron:
   ( definition )*
 ;
 
-
 useDef:
    'use' ident ( '::' '{' ID ( ',' ID)* '}')?
 ;
@@ -34,35 +33,41 @@ definition:
 
 flavorDef:
    'flavor' (typeParamBlock)? ID ('composes'  composes=typeList)? 'is'
-         channelDef*
+      flavorMessage+
    'end' ( '@flavor' )?
+;
 
+flavorMessage:
+   ID '(' typedIdList ')'
 ;
 
 quarkDef:
    'quark' (typeParamBlock)? ID (  argSpec )?
-   ('composes' composes=typeList)?
+   ('composes' composes=constructorList)?
    'is'
-      ( channelDef
+      ( messageDef
       | slotDef
       )*
-      'do' action
-      'end' ('@quark')?
+   'do'
+      action*
+   'end' ('@quark')?
  ;
+
+constructorList:
+   constructor ( ',' constructor )*
+;
+
+constructor:
+   type ( '(' exprList ')' )?
+;
+
+messageDef:
+   'message' ID '(' typedIdList ')' 'do' action+ 'end' ('@message')?
+;
+
 
 slotDef:
    'slot' ID ':' type '=' expr
-;
-
-channelDef:
-    'chan' ID ':' direction type
-;
-
-direction:
-   'in'   # dirIn
-| 'out'   # dirOut
-| 'both'  # dirBoth
-|         # dirNone
 ;
 
 idList:
@@ -90,14 +95,12 @@ arg:
 ;
 
 type:
-   'chan' direction  type # channelType
-|   ( typeArgBlock )? ident   # namedType
+    ( typeArgBlock )? ident   # namedType
 ;
 
 typeArgBlock:
    '[' type ( ',' type )* ']'
 ;
-
 
 bosonDef:
    'boson' (typeParamBlock)? ID 'is' bosonBody 'end' ( '@boson' )?
@@ -122,23 +125,27 @@ typedId:
 ;
 
 action:
-  'one' '{' action (',' action)+ '}'  # choiceAction
-| 'seq' '{' action (',' action)+ '}'  # sequenceAction
+  'seq' '{' action (',' action)+ '}'  # sequenceAction
 | 'par' '{' action (',' action)+ '}'  # parAction
-| 'spawn' action  # spawnAction
 | '(' action ')'      # parenAction
 | lvalue '=' expr     # assignAction
-| 'send' chan=expr  '(' value=expr ')' # sendAction
-| 'receive' chan=expr '{'
-        onClause+
-      '}'  # receiveAction
+| expr '<-' ID ( '(' exprList ')' )?  # sendAction
 | 'var' ID ':' type  '=' expr         # vardefStmt// variable definition.
+| matchAction   # matchActionStmt
 | 'if' '(' cond=expr  ')'  t=action  'else'  f=action    # ifAction
 | 'while' '(' expr ')'  action                # whileAction
 | 'repeat' action  # loopAction
 | 'for' ID 'in' expr 'do' action  'end' ('@action')?         # forAction
 | 'exit'  # exitAction
 ;
+
+matchAction:
+   'match' e=expr 'as'
+   onClause+
+   ('else' elseClause=action)?
+   'end' ( '@match' )?
+;
+
 
 onClause:
    'on' pattern 'do' action
@@ -168,15 +175,18 @@ lvalue:
 
 expr:
   // start a process.
-    'run' type '(' (exprList)? ')'  # runExpr
-  | 'newchan' type  # newChanExpr
+    'spawn' type '(' (exprList)? ')'  # runExpr
+
+  | // Sync call: if you have a message whose last parameter is of type "[T]Result", then you can call it
+    // as an expression, and the current continuation will be converted to an object of type [T]result.
+    expr '<<' ID '(' exprList? ')' # syncCallExpr
   | l=expr op=('and' | 'or' ) r=expr  # logicExpr
   | l=expr op=('==' | '!=' | '>' | '>=' | '<' | '<=') r=expr  # compareExpr
   | l=expr op=('+' | '-'  )  r=expr  # addExpr
   | l=expr op=('*' | '/' | '%') r=expr  # multExpr
   | op=('not' | '-' ) expr  # negateExpr
   | '(' expr ')' # parenExpr
-  | ident '(' exprList ')' # bosonTupleExpr
+  | ident ('(' exprList ')')? # bosonTupleExpr
   | ident '{' keyValueList '}' # bosonStructExpr
   | LIT_STRING # litStrExpr
   | LIT_INT  # litIntExpr
@@ -184,8 +194,6 @@ expr:
   | LIT_CHAR # litCharExpr
   | type '[' exprList ']'  # listExpr
   | lvalue # lvalueExpr
-  | expr '#in'   # narrowChanToInExpr
-  | expr '#out' # narrowChanToOutExpr
 ;
 
 keyValueList:

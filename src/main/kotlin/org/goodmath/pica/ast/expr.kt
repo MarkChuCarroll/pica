@@ -57,7 +57,7 @@ class OperatorExpr(val op: Operator, val operands: List<Expr>, loc: Location) : 
 class FieldValue(val name: Symbol, val value: Expr, loc: Location): AstNode(loc) {
     override fun twist(): Twist =
         Twist.obj("Expr::Boson::FieldValue",
-            Twist.attr("name", name.toString()),
+            Twist.attr("name", name.repr),
             Twist.value("value", value))
 }
 
@@ -68,7 +68,7 @@ class BosonStructExpr(
 ) : Expr(loc) {
     override fun twist(): Twist =
         Twist.obj("Expr::Boson::Struct",
-            Twist.attr("name", bosonOptionName.toString()),
+            Twist.attr("name", bosonOptionName.name.repr),
             Twist.arr("fields", fields))
 
 }
@@ -76,7 +76,7 @@ class BosonStructExpr(
 class BosonTupleExpr(val bosonOptionName: Identifier, val fields: List<Expr>, loc: Location) : Expr(loc) {
     override fun twist(): Twist =
         Twist.obj("Expr::Boson::Tuple",
-            Twist.attr("name", bosonOptionName.toString()),
+            Twist.attr("name", bosonOptionName.name.repr),
             Twist.arr("fields", fields)
         )
 }
@@ -91,30 +91,7 @@ class CreateQuarkExpr(
             Twist.value("type", quarkType),
             Twist.arr("valueArgs", valueArgs)
         )
-
 }
-
-class NewChannelExpr(val type: SType, loc: Location) : Expr(loc) {
-    override fun twist(): Twist =
-        Twist.obj("Expr::NewChannel",
-            Twist.value(
-                "type", type
-            ))
-
-}
-
-class NarrowChannelToInExpr(val chan: Expr, loc:Location): Expr(loc) {
-    override fun twist(): Twist =
-        Twist.obj("Expr::NarrowToIn",
-            Twist.value("channel", chan))
-}
-
-class NarrowChannelToOutExpr(val chan: Expr, loc:Location): Expr(loc) {
-    override fun twist(): Twist =
-        Twist.obj("Expr::NarrowToOut",
-            Twist.value("channel", chan))
-}
-
 
 class ListExpr(val type: SType, val values: List<Expr>, loc: Location) : Expr(loc) {
     override fun twist(): Twist =
@@ -126,6 +103,21 @@ class ListExpr(val type: SType, val values: List<Expr>, loc: Location) : Expr(lo
 enum class LiteralKind {
     StrLit, IntLit, FloatLit, CharLit, SymLit
 }
+
+class SynchronousCallExpr(
+    val target: Expr,
+    val message: Symbol,
+    val args: List<Expr>,
+    loc: Location): Expr(loc) {
+
+    override fun twist(): Twist =
+        Twist.obj("Expr::SyncCall",
+            Twist.value("target", target),
+            Twist.attr("message", message.repr),
+            Twist.arr("args", args))
+
+}
+
 
 class LiteralExpr(val kind: LiteralKind, val value: Any, loc: Location) : Expr(loc) {
     override fun twist(): Twist =
@@ -148,7 +140,7 @@ class FieldLValueExpr(val baseLValue: LValExpr, val field: Symbol, loc: Location
     override fun twist(): Twist =
         Twist.obj("Expr::LVal::Field",
             Twist.value("base", baseLValue),
-            Twist.attr("field", field.toString()))
+            Twist.attr("field", field.repr))
 }
 
 class IndexedLValueExpr(val baseLValue: LValExpr, val idx: Int, loc: Location) : LValExpr(loc) {

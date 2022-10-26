@@ -1,0 +1,9 @@
+
+flavor [T]Result is
+   return(t: T)
+end@flavor
+
+flavor [T, U]Function is
+   call(params: T, result: [U]result)
+end
+

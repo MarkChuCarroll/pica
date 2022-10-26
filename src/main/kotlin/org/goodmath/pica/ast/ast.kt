@@ -33,20 +33,20 @@ class Identifier(val hadronId: Identifier?, val name: Symbol, loc: Location): As
         if (hadronId == null) {
             Twist.obj(
                 "Ident",
-                Twist.attr("name", name.toString()))
+                Twist.attr("name", name.repr))
         } else {
             Twist.obj(
                 "Ident",
                 Twist.value("hadron", hadronId),
-                Twist.attr("name", name.toString())
-            )
+                Twist.attr("name", name.repr))
+
     }
 
     override fun toString(): String {
         return if (hadronId != null) {
-            "$hadronId::${name.name}"
+            "$hadronId::${name.repr}"
         } else {
-            name.name
+            name.repr
         }
     }
 
@@ -70,7 +70,7 @@ class UseDef(val hadronId: Identifier, val names: List<Symbol>, loc: Location): 
         Twist.obj(
             "Use",
             Twist.attr("hadron", hadronId.toString()),
-            Twist.arr("names", names.map { Twist.leaf(it.toString()) })
+            Twist.arr("names", names.map { Twist.leaf(it.repr) })
         )
 }
 

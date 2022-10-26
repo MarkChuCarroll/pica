@@ -23,19 +23,6 @@ import org.goodmath.pica.util.Twist
 abstract class SType(val typeArgs: List<SType>?, loc: Location): AstNode(loc) {
 }
 
-enum class ChannelDirection {
-    In, Out, Both
-}
-class ChannelType(val messageType: SType, val dir: ChannelDirection, loc: Location): SType(null, loc) {
-    override fun twist(): Twist =
-        Twist.obj("Type::Channel",
-            Twist.opt(typeArgs?.let { Twist.arr("typeArgs", it) }),
-            Twist.attr("direction", dir.toString()),
-            Twist.value("msgType", messageType)
-        )
-
-}
-
 class NamedType(val typeId: Identifier, typeArgs: List<SType>?, loc: Location): SType(typeArgs, loc) {
     override fun twist(): Twist =
         Twist.obj("Type::Named",
@@ -49,7 +36,7 @@ class TypeVar(val name: Symbol,
 
     override fun twist(): Twist =
         Twist.obj("Type::TypeVar",
-            Twist.attr("name", name.toString()),
+            Twist.attr("name", name.repr),
             Twist.opt(constraint?.let { Twist.arr("constraint", it)}))
 
 }

@@ -2,11 +2,12 @@ package org.goodmath.pica.util
 
 import org.goodmath.pica.ast.AstNode
 import org.goodmath.pica.ast.Location
+import java.io.IOException
 
 class PicaCompileError(val msg: String,
                        val loc: Location? = null,
                        val astNode: AstNode? = null,
-                       val cause: Exception? = null) {
+                       val cause: Throwable? = null) {
     override fun toString(): String {
         val result = StringBuilder()
         result.append("Error: $msg")
@@ -30,29 +31,35 @@ class PicaCompileError(val msg: String,
     }
 }
 
-class PicaCompileException(val msg: String,
-                           loc: Location? = null,
+open class PicaCompileException(val msg: String,
+                           val loc: Location? = null,
                            val astNode: AstNode? = null,
-                           cause: Exception? = null): Exception(msg) {
+                           cause: Throwable? = null): Exception(msg, cause) {
 }
+
+class PicaIOException(msg: String, cause: IOException?): PicaCompileException(msg, null, null, cause)
+class PicaTypeException(msg: String, loc: Location, ast: AstNode): PicaCompileException(msg, loc, ast, null)
+
+class PicaSyntaxException(msg: String, loc: Location, ast: AstNode): PicaCompileException(msg, loc, ast, null)
+
+class PicaInternalException(msg: String): PicaCompileException(msg, null, null, null)
 
 object PicaErrorLog {
     private val log = ArrayList<PicaCompileError>();
+
+
     fun logError(msg: String,
                  loc: Location? = null,
                  astNode: AstNode? = null,
-                 cause: Exception? = null) {
+                 cause: Throwable? = null) {
         val e = PicaCompileError(msg, loc, astNode, cause)
         System.err.println(e.toString())
         log.add(e)
     }
 
-    fun logException(msg: String,
-                     loc: Location? = null,
-                     astNode: AstNode? = null,
-                     cause: Exception? = null): PicaCompileException {
-        logError(msg, loc, astNode, cause)
-        return PicaCompileException(msg, loc, astNode, cause)
+    fun logException(e: PicaCompileException): PicaCompileException {
+        logError(e.msg, e.loc, e.astNode, e.cause)
+        return e
     }
 
     fun getErrors(): List<PicaCompileError> = log

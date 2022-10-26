@@ -37,7 +37,7 @@ class BosonDefinition(
     override fun twist(): Twist =
         Twist.obj("Def::Boson",
             Twist.attr("hadron", hadronId.toString()),
-            Twist.attr("name", name.toString()),
+            Twist.attr("name", name.repr),
             Twist.opt(typeParams?.let { Twist.arr("typeParams", it) }),
             Twist.arr("options",
                 options))
@@ -58,7 +58,7 @@ class BosonStructOption(
 ): BosonOption(name, loc) {
     override fun twist(): Twist =
         Twist.obj("Def::Boson::StructOption",
-            Twist.attr("name", name.toString()),
+            Twist.attr("name", name.repr),
             Twist.arr("fields", fields))
 }
 
@@ -69,7 +69,7 @@ class BosonTupleOption(
 ): BosonOption(name, loc) {
     override fun twist(): Twist =
         Twist.obj("Def::Boson::TupleOption",
-            Twist.attr("name", name.toString()),
+            Twist.attr("name", name.repr),
             Twist.arr("fields", fields))
 
 }
@@ -80,8 +80,33 @@ class TypedIdentifier(
     loc: Location): AstNode(loc) {
     override fun twist(): Twist =
         Twist.obj("Param::TypedId",
-            Twist.attr("name", name.toString()),
+            Twist.attr("name", name.repr),
             Twist.value("type", type))
+
+}
+
+class QuarkConstructorExpr(
+    val quarkType: SType,
+    val args: List<Expr>,
+    loc: Location): AstNode(loc) {
+    override fun twist(): Twist =
+        Twist.obj("Def::Quark::Constructor",
+            Twist.value("type", quarkType),
+            Twist.arr("args", args)
+        )
+}
+
+class QuarkMessage(
+    val name: Symbol,
+    val params: List<TypedIdentifier>,
+    val body: List<Action>,
+    loc: Location): AstNode(loc) {
+    override fun twist(): Twist =
+        Twist.obj("Def::Quark::Message",
+            Twist.attr("name", name.repr),
+            Twist.arr("params", params),
+            Twist.arr("body", body)
+        )
 
 }
 
@@ -90,33 +115,21 @@ class QuarkDefinition(
     name: Symbol,
     typeParams: List<TypeVar>?,
     val valueParams: List<TypedIdentifier>,
-    val composes: List<SType>,
-    val channels: List<ChannelDef>,
+    val composes: List<QuarkConstructorExpr>,
+    val messages: List<QuarkMessage>,
     val slots: List<SlotDef>,
-    val actions: Action,
+    val actions: List<Action>,
     loc: Location
 ): Definition(hadronId, name, typeParams, loc) {
     override fun twist(): Twist =
         Twist.obj("Def::Quark",
             Twist.attr("hadron", hadronId.toString()),
-            Twist.attr("name", name.toString()),
+            Twist.attr("name", name.repr),
             Twist.opt(typeParams?.let { Twist.arr("typeParams", it)}),
             Twist.arr("valueParams", valueParams),
-            Twist.arr("channels", channels),
+            Twist.arr("messages", messages),
             Twist.arr("slots", slots),
             Twist.arr("actions", actions))
-}
-
-class ChannelDef(
-    val name: Symbol,
-    val type: ChannelType,
-    loc: Location
-): AstNode(loc) {
-    override fun twist(): Twist =
-        Twist.obj("Definition::Channel",
-            Twist.attr("name", name.toString()),
-            Twist.value("type", type))
-
 }
 
 class SlotDef(
@@ -127,23 +140,34 @@ class SlotDef(
 ): AstNode(loc) {
     override fun twist(): Twist =
         Twist.obj("Def::Quark::Slot",
-            Twist.attr("name", name.toString()),
+            Twist.attr("name", name.repr),
             Twist.value("type", type),
             Twist.value("initValue", initValue))
 
 }
 
+class FlavorMessageDef(
+    val name: Symbol,
+    val params: List<TypedIdentifier>,
+    loc: Location): AstNode(loc) {
+    override fun twist(): Twist =
+        Twist.obj("Def::Flavor::Message",
+            Twist.attr("name", name.repr),
+            Twist.arr("parameters", params))
+}
+
+
 class FlavorDef(
     hadronId: Identifier,
     name: Symbol,
     typeParams: List<TypeVar>?,
-    val channels: List<ChannelDef>,
+    val messages: List<FlavorMessageDef>,
     loc: Location): Definition(hadronId, name, typeParams, loc) {
     override fun twist(): Twist =
         Twist.obj("Def::Flavor",
             Twist.attr("hadron", hadronId.toString()),
-            Twist.attr("name", name.toString()),
+            Twist.attr("name", name.repr),
             Twist.opt(typeParams?.let { Twist.arr("typeParams", it)}),
-            Twist.arr("channels", channels))
+            Twist.arr("messages", messages))
 
 }

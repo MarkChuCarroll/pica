@@ -29,13 +29,6 @@ class AssignmentAction(val target: LValExpr, val value: Expr, loc: Location): Ac
 
 }
 
-class ChoiceAction(val choices: List<Action>, loc: Location): Action(loc) {
-    override fun twist(): Twist =
-        Twist.obj("Action::Choice",
-            Twist.arr("choices", choices))
-
-}
-
 class ExitAction(loc: Location): Action(loc) {
     override fun twist(): Twist =
         Twist.leaf("Action::Exit")
@@ -78,8 +71,8 @@ abstract class BosonPattern(val optionName: Symbol, loc: Location): AstNode(loc)
 class BosonPatternBinding(val fieldName: Symbol, val boundVariable: Symbol, loc: Location): AstNode(loc) {
     override fun twist(): Twist =
         Twist.obj("Action::Receive::PatternBinding",
-            Twist.attr("fieldName", fieldName.toString()),
-            Twist.attr("boundVariable", boundVariable.toString()))
+            Twist.attr("fieldName", fieldName.repr),
+            Twist.attr("boundVariable", boundVariable.repr))
 
 }
 class BosonStructPattern(
@@ -88,7 +81,7 @@ class BosonStructPattern(
     loc: Location): BosonPattern(optionName, loc) {
     override fun twist(): Twist =
         Twist.obj("Action::Receive::BosonStructPattern",
-            Twist.attr("optionName", optionName.toString()),
+            Twist.attr("optionName", optionName.repr),
             Twist.arr("bindings", bindings))
 }
 
@@ -97,32 +90,34 @@ class BosonTuplePattern(optionName: Symbol,
                         loc: Location): BosonPattern(optionName, loc) {
     override fun twist(): Twist =
         Twist.obj("Action::Receive::BosonTuplePattern",
-        Twist.attr("OptionName", optionName.toString()),
-            Twist.arr("fields", bindings.map { b -> Twist.attr("boundVariable", b.toString()) }))
-
+        Twist.attr("OptionName", optionName.repr),
+            Twist.arr("fields", bindings.map { b -> Twist.attr("boundVariable", b.repr)} ))
 }
 
-class ReceiveOption(val pattern: BosonPattern, val action: Action, loc: Location): AstNode(loc) {
+class MatchOption(val pattern: BosonPattern, val action: Action, loc: Location): AstNode(loc) {
     override fun twist(): Twist =
-        Twist.obj("Action::Recieve::ReceiveOption",
+        Twist.obj("MatchOption",
             Twist.value("pattern", pattern),
-            Twist.value("action", action))
-}
+            Twist.value("action", action)
+            )
 
-class ReceiveAction(val channel: Expr,
-                    val actions: List<ReceiveOption>,
-                    loc: Location): Action(loc) {
+}
+class MatchAction(val expr: Expr, val options: List<MatchOption>, val elseClause: Action?, loc: Location): Action(loc) {
     override fun twist(): Twist =
-        Twist.obj("Action::Receive",
-            Twist.value("channel", channel),
-            Twist.arr("actions", actions))
+        Twist.obj("Action::Match",
+            Twist.value("expr", expr),
+            Twist.arr("options", options),
+            Twist.value("else", elseClause))
 }
 
-class SendAction(val channel: Expr, val value: Expr, loc: Location): Action(loc) {
+class SendAction(val target: Expr, val name: Symbol, val args: List<Expr>, loc: Location): Action(loc) {
     override fun twist(): Twist =
         Twist.obj("Action::Send",
-            Twist.value("channel", channel),
-            Twist.value("message", value))
+            Twist.value("target", target),
+            Twist.attr("messageName", name.repr),
+            Twist.arr("args", args)
+        )
+
 }
 
 class SequenceAction(val actions: List<Action>, loc: Location): Action(loc) {
@@ -131,19 +126,10 @@ class SequenceAction(val actions: List<Action>, loc: Location): Action(loc) {
             Twist.arr("actions", actions))
 }
 
-// Spawn starts an action that sends or receives a message; as soon as that
-// message is paired with a sender/reciever, it starts another copy of its action.
-class SpawnAction(val action: Action, loc: Location): Action(loc) {
-    override fun twist(): Twist =
-        Twist.obj("Action::Spawn",
-            Twist.value("action", action))
-}
-
-
 class VarDefAction(val name: Symbol, val type: SType, val value: Expr, loc: Location): Action(loc) {
     override fun twist(): Twist =
         Twist.obj("Action::VarDef",
-            Twist.attr("name", name.toString()),
+            Twist.attr("name", name.repr),
             Twist.value("type", type),
             Twist.value("value", value))
 

@@ -1,8 +1,8 @@
 package org.goodmath.pica.util
 
-class Symbol private constructor(val name: String) {
+class Symbol private constructor(val repr: String) {
     override fun toString(): String {
-        return "$<$name>"
+        return "$<$repr>"
     }
 
     companion object {

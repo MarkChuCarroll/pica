@@ -56,7 +56,7 @@ sealed class Twist: Twistable {
             return AttributeNode(name, value)
         }
 
-        fun value(name: String, value: Twistable): Twist {
+        fun value(name: String, value: Twistable?): Twist {
             return ValueNode(name, value)
         }
 
@@ -80,10 +80,10 @@ class ObjectNode(val name: String, val children: List<Twistable>): Twist() {
     }
 
     override fun renderCode(i: Int): String =
-        "  ".repeat(i) +
+        "    ".repeat(i) +
                 "Twist.obj(\"${name}\",\n" +
-                children.map { it.twist().renderCode(i+1) }.joinToString("") +
-                "  ".repeat(i) + ")\n"
+                children.map { it.twist().renderCode(i+1) }.filter { it != "" }.joinToString(",\n") +
+                ")"
 }
 
 class ArrayNode(val name: String, val children: List<Twistable>): Twist() {
@@ -99,10 +99,10 @@ class ArrayNode(val name: String, val children: List<Twistable>): Twist() {
 
     override fun renderCode(i: Int): String {
         return if (children.isNotEmpty()) {
-            "  ".repeat(i) +
+            "    ".repeat(i) +
                     "Twist.arr(\"${name}\",\n" +
-                    children.map { it.twist().renderCode(i + 1) }.joinToString("") +
-                    "  ".repeat(i) + ")\n"
+                    children.map { it.twist().renderCode(i + 1) }.joinToString(",\n") +
+                    ")"
         } else {
             ""
         }
@@ -116,21 +116,26 @@ class AttributeNode(val name: String, val value: String): Twist() {
     }
 
     override fun renderCode(i: Int): String {
-        return "  ".repeat(i) + "Twist.attr(\"$name\", \"$value\"),\n"
+        return "    ".repeat(i) + "Twist.attr(\"$name\", \"$value\")"
     }
 }
 
-class ValueNode(val name: String, val value: Twistable): Twist(){
+class ValueNode(val name: String, val value: Twistable?): Twist(){
     override fun render(sb: StringBuilder, indent: Int) {
-        sb.indent(indent)
-        sb.append("$name:\n")
-        value.twist().render(sb, indent+1)
+        if (value != null) {
+            sb.indent(indent)
+            sb.append("$name:\n")
+            value.twist().render(sb, indent + 1)
+        }
     }
 
     override fun renderCode(i: Int): String {
-        return "  ".repeat(i) + "Twist.value(\"$name\",\n" + value.twist().renderCode(i+1) +
-                "  ".repeat(i) +
-                ")\n"
+        if (value != null) {
+            return "    ".repeat(i) + "Twist.value(\"$name\",\n" + value.twist().renderCode(i + 1) +
+                    ")"
+        } else {
+            return ""
+        }
     }
 }
 
@@ -141,7 +146,7 @@ class LeafNode(val name: String): Twist() {
     }
 
     override fun renderCode(i: Int): String {
-        return "  ".repeat(i) + "Twist.leaf(\"$name\")\n"
+        return "    ".repeat(i) + "Twist.leaf(\"$name\")"
     }
 }
 

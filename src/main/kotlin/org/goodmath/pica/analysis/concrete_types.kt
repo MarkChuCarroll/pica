@@ -1,40 +1,24 @@
 package org.goodmath.pica.analysis
 
-import org.goodmath.pica.LocalScope
 import org.goodmath.pica.RootScope
 import org.goodmath.pica.Scope
 import org.goodmath.pica.ast.*
-import org.goodmath.pica.util.PicaErrorLog
-import org.goodmath.pica.util.Symbol
-import org.goodmath.pica.util.Twist
-import org.goodmath.pica.util.Twistable
-import java.util.Properties
+import org.goodmath.pica.util.*
 
-/**
- * How are parametric types going to work in here?
- *
- * When you analyze a quark definition, you create typevars for each of its type parameters, and
- * setting them in the scope of the definition. For example, if you're instantiating a
- * quark, then you create a new local scope from the quark (and, of course, it's static
- * module), and then you insert the type variables into that new local scope as the
- * values of the type arguments. When you construct other concrete types in that scope,
- * they'll just look up the values of those type names, and get back the type variables.
- *
- */
 
-interface Bindable<T> {
-    fun bind(bindings: Map<TypeVar, ConcreteType>): T
-}
-
-abstract class ConcreteType(): Twistable, Bindable<ConcreteType> {
+abstract class ConcreteType(): Twistable {
     abstract val scope: Scope
+
 
     /**
      * Check if this concrete type can satisfy a type constraint.
      * To do this, we may need to be able to instantiate type arguments,
      * which requires a scope in which they can be looked up.
      */
-    abstract fun canSatisfy(constraint: SType, inScope: Scope): Boolean
+    fun canSatisfy(constraint: SType, inScope: Scope): Boolean =
+        canSatisfy(instantiate(constraint, inScope))
+
+    abstract fun canSatisfy(constraint: ConcreteType): Boolean
 
 
     companion object {
@@ -49,107 +33,80 @@ abstract class ConcreteType(): Twistable, Bindable<ConcreteType> {
                         is BosonDefinition -> ConcreteBosonType(def, typeArgs)
                         is FlavorDef -> ConcreteFlavorType(def, typeArgs)
                         else -> {
-                            throw PicaErrorLog.logException("Invalid declaration type.", null, def)
+                            throw PicaErrorLog.logException(
+                                PicaTypeException("Invalid declaration type; expected one of quark, flavor, or boson," +
+                                        "but saw ${def}",
+                                    def.loc, def
+                                ))
+
                         }
                     }
                 } else { // If we have a named type, and it doesn't reference a definition,
                     // then either it's an undefined name (which should be an error), or it's
-                    // a type variable. If the latter, then it should appear in the types of
+                    // the name of a type variable. If the latter, then it should appear in the types of
                     // the scope.
                     val type =
-                        scope.getType(t.typeId) ?: throw PicaErrorLog.logException("Undefined type name ${t.typeId}")
+                        scope.getType(t.typeId) ?: throw PicaErrorLog.logException(
+                            PicaTypeException("Undefined type name ${t.typeId}", t.loc, t))
                     return type
-
                 }
             } else {
-                // It's a channel type.
-                val chType = t as ChannelType
-                return ConcreteChannelType(chType, chType.dir,
-                    ConcreteType.instantiate(chType.messageType, scope), scope)
+                // Types are either named types, or type variables. If we're trying to
+                // analyze a type, and a type variable hasn't been replaced, then it's
+                // an internal error - we messed up, it should have been replaced during instantiation.
+                throw PicaErrorLog.logException(
+                    PicaTypeException("Naked type variable ${t}", t.loc, t))
             }
         }
     }
-
-
-
 }
 
-
-
-class ConcreteFlavorType(
-    val flavorDef: FlavorDef,
-    val typeArgs: List<ConcreteType>): ConcreteType() {
-
-    override val scope by lazy {
-        TODO()
-    }
-
-    val channels: List<ConcreteChannel> by lazy {
-        TODO()
-    }
-
-
-    override fun canSatisfy(constraint: SType, inScope: Scope): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun twist(): Twist =
-        Twist.obj("ConcreteType::Flavor",
-            Twist.attr("id", flavorDef.id.toString()),
-            Twist.opt(
-                if (typeArgs.isNotEmpty()) { Twist.arr("typeArgs", typeArgs) }
-                else { null }),
-            Twist.arr("channels", channels))
-
-    override fun bind(bindings: Map<TypeVar, ConcreteType>): ConcreteFlavorType {
-        return if (flavorDef.typeParams == null || flavorDef.typeParams.isEmpty()) {
-            this
-        } else {
-            return ConcreteFlavorType(flavorDef,
-                typeArgs.map { t -> t.bind(bindings)}
-            )
-        }
-    }
-}
-
-
-class ConcreteChannelType(val def: ChannelType,
-                          val direction: ChannelDirection,
-                          val msgType: ConcreteType, override val scope: Scope): ConcreteType() {
-    override fun canSatisfy(constraint: SType, inScope: Scope): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun twist(): Twist =
-        Twist.obj("ConcreteType::Channel",
-            Twist.attr("direction", direction.toString()),
-            Twist.value("msgType", msgType)
-        )
-
-    override fun bind(bindings: Map<TypeVar, ConcreteType>): ConcreteChannelType =
-        ConcreteChannelType(def, direction, msgType.bind(bindings), scope)
-
-}
-
+// TODO: Can a type var take type params? I don't think so, that would
+// be higher order types, which I don't want to deal with.
 class ConcreteTypeVar(val name: Symbol, val def: TypeVar, override val scope: Scope): ConcreteType() {
 
     val id = "$name{${nextIndex()}}"
 
     val constraints: List<ConcreteType> by lazy {
-        TODO()
+        def.constraint.orEmpty().map { instantiate(it, scope) }
     }
 
-    override fun bind(bindings: Map<TypeVar, ConcreteType>): ConcreteType {
-        return bindings[def] ?: this
+    val messages: List<ConcreteMessageType> by lazy {
+        constraints.flatMap {
+            when(it) {
+                is ConcreteTypeVar -> it.messages
+                is ConcreteFlavorType -> it.messages
+                else -> emptyList()
+            }
+        }
     }
 
-    override fun canSatisfy(constraint: SType, inScope: Scope): Boolean {
-        TODO("Not yet implemented")
+    override fun canSatisfy(constraint: ConcreteType): Boolean {
+        return when(constraint) {
+            is ConcreteFlavorType -> constraint.messages.containsAll(messages)
+            is ConcreteTypeVar -> constraint.messages.containsAll(messages)
+            else -> false
+        }
     }
 
     override fun twist(): Twist =
         Twist.obj("TypeVar",
             Twist.value("definition", def))
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ConcreteTypeVar
+
+        if (id != other.id) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return id.hashCode()
+    }
 
     companion object {
         var currentMaxIndex: Int = 0

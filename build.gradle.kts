@@ -24,7 +24,7 @@ dependencies {
 
 application {
     // Define the main class for the application.
-    mainClass.set("abyss.AppKt")
+    mainClass.set("org.goodmath.pica.compiler.MainKt")
 }
 
 java.sourceSets["main"].java {
