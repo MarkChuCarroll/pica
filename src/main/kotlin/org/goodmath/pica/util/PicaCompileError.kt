@@ -32,9 +32,9 @@ class PicaCompileError(val msg: String,
 }
 
 open class PicaCompileException(val msg: String,
-                           val loc: Location? = null,
-                           val astNode: AstNode? = null,
-                           cause: Throwable? = null): Exception(msg, cause) {
+                                val loc: Location? = null,
+                                val astNode: AstNode? = null,
+                                cause: Throwable? = null): Exception(msg, cause) {
 }
 
 class PicaIOException(msg: String, cause: IOException?): PicaCompileException(msg, null, null, cause)

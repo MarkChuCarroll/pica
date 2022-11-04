@@ -32,39 +32,32 @@ definition:
 ;
 
 flavorDef:
-   'flavor' (typeParamBlock)? ID ('composes'  composes=typeList)? 'is'
-      flavorMessage+
-   'end' ( '@flavor' )?
+   'flavor' (typeParamBlock)? ID ('<' composes=typeList )? 'is'
+      channelDef*
+   'end' ('@flavor')?
 ;
 
-flavorMessage:
-   ID '(' typedIdList ')'
+channelDef:
+  'chan' ID ( '[' dir ']')?':' type
 ;
 
 quarkDef:
-   'quark' (typeParamBlock)? ID (  argSpec )?
-   ('composes' composes=constructorList)?
-   'is'
-      ( messageDef
-      | slotDef
-      )*
+   'quark' (typeParamBlock)? ID ( argSpec )?
+    ( ':' flavors=typeList )? // implemented flavors
+    'is'
+      ( channelDef |
+       slotDef |
+       behaviorDef )*
    'do'
-      action*
+        action+
    'end' ('@quark')?
  ;
 
-constructorList:
-   constructor ( ',' constructor )*
+behaviorDef:
+  'behavior' ID '(' typedIdList? ')'  'is'
+     action+
+  'end' ('@behavior')?
 ;
-
-constructor:
-   type ( '(' exprList ')' )?
-;
-
-messageDef:
-   'message' ID '(' typedIdList ')' 'do' action+ 'end' ('@message')?
-;
-
 
 slotDef:
    'slot' ID ':' type '=' expr
@@ -95,7 +88,18 @@ arg:
 ;
 
 type:
-    ( typeArgBlock )? ident   # namedType
+  namedType | channelType
+;
+
+namedType:
+    ( typeArgBlock )? ident
+;
+
+channelType:
+   'chan' ( '[' dir ']' )? type
+;
+
+dir: 'in' | 'out'
 ;
 
 typeArgBlock:
@@ -108,11 +112,11 @@ bosonDef:
 
 
 bosonBody:
-   bosonOption (',' bosonOption)*
+   bosonOption ('|' bosonOption)*
 ;
 
 bosonOption:
-   ID '(' typeList ')' # tupleBosonOption
+  ID '(' typeList ')' # tupleBosonOption
 | ID '{' typedIdList  '}' # structBosonOption
 ;
 
@@ -124,31 +128,57 @@ typedId:
    ID ':' type
 ;
 
+
 action:
-  'seq' '{' action (',' action)+ '}'  # sequenceAction
-| 'par' '{' action (',' action)+ '}'  # parAction
-| '(' action ')'      # parenAction
-| lvalue '=' expr     # assignAction
-| expr '<-' ID ( '(' exprList ')' )?  # sendAction
-| 'var' ID ':' type  '=' expr         # vardefStmt// variable definition.
-| matchAction   # matchActionStmt
-| 'if' '(' cond=expr  ')'  t=action  'else'  f=action    # ifAction
-| 'while' '(' expr ')'  action                # whileAction
-| 'repeat' action  # loopAction
-| 'for' ID 'in' expr 'do' action  'end' ('@action')?         # forAction
-| 'exit'  # exitAction
+  'par' '{' action+'}'  # parAction
+| 'seq' '{' action+ '}'  # seqAction
+| 'opt' '{' action+ '}'  # optAction
+| 'send' chan=expr '(' boson=expr ')' # sendAction
+| 'rec' chan=expr 'do'
+   receiveClause+
+   ( 'else' action )?
+   'end' ('@rec')?  # receiveAction
+| lvalue ':=' expr     # assignAction
+| 'var' ID ':' type  '=' expr         # vardefAction // variable definition.
+| cond  # condAction
+| 'while' '(' expr ')'  'do' action+ 'end'         # whileAction
+| 'for' ID 'in' expr 'do' action+  'end'       # forAction
+| 'adopt' ID '(' exprList? ')'  # adoptBehaviorAction
 ;
 
-matchAction:
-   'match' e=expr 'as'
-   onClause+
-   ('else' elseClause=action)?
-   'end' ( '@match' )?
+receiveClause:
+   'on' pattern 'do' action+ 'end'
 ;
 
+cond:
+   'if' condClause
+   ( 'elif' condClause )*
+   ('else' e=action+)?
+   'end' ('@if')?
+;
 
-onClause:
-   'on' pattern 'do' action
+condClause:
+  c=expr 'then' action+
+;
+
+expr:
+  // Create a new quark.
+  '!' type '(' (exprList)? ')'  # runExpr
+| l=expr op=('and' | 'or' ) r=expr  # logicExpr
+| c=expr '?' t=expr ':' f=expr  # condExpr
+| l=expr op=('==' | '!=' | '>' | '>=' | '<' | '<=') r=expr  # compareExpr
+| l=expr op=('+' | '-'  )  r=expr  # addExpr
+| l=expr op=('*' | '/' | '%') r=expr  # multExpr
+| op=('not' | '-' ) expr  # negateExpr
+| '(' expr ')' # parenExpr
+| ident ('(' exprList ')')? # bosonTupleExpr
+| ident '{' keyValueList '}' # bosonStructExpr
+| LIT_STRING # litStrExpr
+| LIT_INT  # litIntExpr
+| LIT_FLOAT # litFloatExpr
+| LIT_CHAR # litCharExpr
+| type '[' exprList ']'  # listExpr
+| lvalue # lvalueExpr
 ;
 
 pattern:
@@ -171,29 +201,6 @@ keyedPattern:
 lvalue:
   ident  # simpleLvalue
 | lvalue '.' v=(ID | LIT_INT) # dotLvalue
-;
-
-expr:
-  // start a process.
-    'spawn' type '(' (exprList)? ')'  # runExpr
-
-  | // Sync call: if you have a message whose last parameter is of type "[T]Result", then you can call it
-    // as an expression, and the current continuation will be converted to an object of type [T]result.
-    expr '<<' ID '(' exprList? ')' # syncCallExpr
-  | l=expr op=('and' | 'or' ) r=expr  # logicExpr
-  | l=expr op=('==' | '!=' | '>' | '>=' | '<' | '<=') r=expr  # compareExpr
-  | l=expr op=('+' | '-'  )  r=expr  # addExpr
-  | l=expr op=('*' | '/' | '%') r=expr  # multExpr
-  | op=('not' | '-' ) expr  # negateExpr
-  | '(' expr ')' # parenExpr
-  | ident ('(' exprList ')')? # bosonTupleExpr
-  | ident '{' keyValueList '}' # bosonStructExpr
-  | LIT_STRING # litStrExpr
-  | LIT_INT  # litIntExpr
-  | LIT_FLOAT # litFloatExpr
-  | LIT_CHAR # litCharExpr
-  | type '[' exprList ']'  # listExpr
-  | lvalue # lvalueExpr
 ;
 
 keyValueList:

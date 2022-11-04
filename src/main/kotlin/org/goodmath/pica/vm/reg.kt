@@ -15,9 +15,9 @@
 
 package org.goodmath.pica.vm
 
-import org.goodmath.pica.util.LeafNode
-import org.goodmath.pica.util.Twist
-import org.goodmath.pica.util.Twistable
+import org.goodmath.pica.util.twist.LeafNode
+import org.goodmath.pica.util.twist.Twist
+import org.goodmath.pica.util.twist.Twistable
 
 
 /**

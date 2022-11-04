@@ -1,25 +1,25 @@
 package org.goodmath.pica
 
-import org.goodmath.pica.analysis.ConcreteType
+import org.goodmath.pica.analysis.DeprecatedConcreteType
 import org.goodmath.pica.ast.AstNode
-import org.goodmath.pica.ast.Definition
+import org.goodmath.pica.ast.defs.Definition
 import org.goodmath.pica.ast.Identifier
-import org.goodmath.pica.ast.HadronDefinition
+import org.goodmath.pica.ast.defs.HadronDefinition
 import org.goodmath.pica.util.Symbol
-import org.goodmath.pica.util.Twist
-import org.goodmath.pica.util.Twistable
+import org.goodmath.pica.util.twist.Twist
+import org.goodmath.pica.util.twist.Twistable
 
 abstract class Scope: Twistable {
     abstract fun getDefinition(name: Identifier): Definition?
-    abstract fun getType(name: Identifier): ConcreteType?
+    abstract fun getType(name: Identifier): DeprecatedConcreteType?
 
-    abstract fun setType(name: Symbol, type: ConcreteType)
+    abstract fun setType(name: Symbol, type: DeprecatedConcreteType)
 
 }
 
 object RootScope: Scope() {
     private val defs = HashMap<Symbol, Definition>()
-    private val types = HashMap<Symbol, ConcreteType>()
+    private val types = HashMap<Symbol, DeprecatedConcreteType>()
     private val scopes = HashMap<Identifier, HadronScope>()
 
     override fun getDefinition(name: Identifier): Definition? {
@@ -30,7 +30,7 @@ object RootScope: Scope() {
         }
     }
 
-    override fun getType(name: Identifier): ConcreteType? {
+    override fun getType(name: Identifier): DeprecatedConcreteType? {
         if (name.hadronId == null) {
             return types[name.name]
         } else {
@@ -38,7 +38,7 @@ object RootScope: Scope() {
         }
     }
 
-    override fun setType(name: Symbol, type: ConcreteType) {
+    override fun setType(name: Symbol, type: DeprecatedConcreteType) {
         types.put(name, type)
     }
 
@@ -64,7 +64,7 @@ object RootScope: Scope() {
 
 class HadronScope(val id: Identifier, val hadron: HadronDefinition): Scope() {
     val defs = HashMap<Symbol, Definition>()
-    val types = HashMap<Symbol, ConcreteType>()
+    val types = HashMap<Symbol, DeprecatedConcreteType>()
     val imports = HashMap<Symbol, Identifier>()
 
     init {
@@ -95,7 +95,7 @@ class HadronScope(val id: Identifier, val hadron: HadronDefinition): Scope() {
         }
     }
 
-    override fun getType(name: Identifier): ConcreteType? {
+    override fun getType(name: Identifier): DeprecatedConcreteType? {
         return when (name.hadronId) {
             null -> {
                 imports[name.name]?.let { getType(it) }
@@ -111,7 +111,7 @@ class HadronScope(val id: Identifier, val hadron: HadronDefinition): Scope() {
 
     }
 
-    override fun setType(name: Symbol, type: ConcreteType) {
+    override fun setType(name: Symbol, type: DeprecatedConcreteType) {
         types[name] = type
     }
 
@@ -133,7 +133,7 @@ class HadronScope(val id: Identifier, val hadron: HadronDefinition): Scope() {
 
 class LocalScope(val parent: Scope, val origin: AstNode): Scope() {
     val definitions = HashMap<Symbol, Definition>()
-    val types = HashMap<Symbol, ConcreteType>()
+    val types = HashMap<Symbol, DeprecatedConcreteType>()
 
     override fun getDefinition(name: Identifier): Definition? {
         return if (name.hadronId == null) {
@@ -147,7 +147,7 @@ class LocalScope(val parent: Scope, val origin: AstNode): Scope() {
         }
     }
 
-    override fun getType(name: Identifier): ConcreteType? {
+    override fun getType(name: Identifier): DeprecatedConcreteType? {
         return if (name.hadronId == null) {
             if (name.name in types) {
                 types[name.name]
@@ -159,7 +159,7 @@ class LocalScope(val parent: Scope, val origin: AstNode): Scope() {
         }
     }
 
-    override fun setType(name: Symbol, type: ConcreteType) {
+    override fun setType(name: Symbol, type: DeprecatedConcreteType) {
         types.put(name, type)
     }
 

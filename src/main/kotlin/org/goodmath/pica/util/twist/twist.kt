@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.goodmath.pica.util
+package org.goodmath.pica.util.twist
 
 fun StringBuilder.indent(i: Int) {
     append("   ".repeat(i))
@@ -159,4 +159,32 @@ class OptNode(val t: Twistable?): Twist() {
         return t?.twist()?.renderCode(i) ?: ""
     }
 
+}
+
+
+fun obj(name: String, vararg children: Twistable): Twist {
+    return Twist.obj(name, *children)
+}
+
+fun obj(name: String, children: List<Twistable>): Twist {
+    return Twist.obj(name, children)
+}
+
+fun arr(name: String, vararg children: Twistable): Twist {
+    return Twist.arr(name, *children)
+}
+
+fun arr(name: String, children: List<Twistable>): Twist {
+    return Twist.arr(name, children)
+}
+
+fun attr(name: String, value: String): Twist {
+    return Twist.attr(name, value)
+}
+
+fun value(name: String, value: Twistable?): Twist {
+    return Twist.value(name, value)
+}
+fun leaf(value: String): Twist {
+    return Twist.leaf(value)
 }
