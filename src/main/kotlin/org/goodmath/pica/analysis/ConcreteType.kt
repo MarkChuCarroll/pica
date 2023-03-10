@@ -21,9 +21,6 @@ Then last night, I realized:
   on the types of the expressions that they use. For example, `send x(y)`
   requires that x is a channel type `[T]chan T`, and y is of the associated boson type,
   `T`.
-\
-
-
  */
 
 abstract class ConcreteType(): Twistable {
