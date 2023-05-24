@@ -16,6 +16,12 @@ package org.goodmath.pica.ast.expr
 
 import org.goodmath.pica.ast.AstNode
 import org.goodmath.pica.ast.Location
+import org.goodmath.pica.ast.types.Type
+import org.goodmath.pica.ast.types.TypeVar
 
-abstract class Expr(loc: Location) : AstNode(loc)
+abstract class Expr(loc: Location) : AstNode(loc) {
+    abstract val boundFrom: Expr?
+
+    abstract fun bind(typeBindings: Map<TypeVar, Type>): Expr
+}
 

@@ -2,6 +2,7 @@ package org.goodmath.pica.ast.defs
 
 import org.goodmath.pica.ast.AstNode
 import org.goodmath.pica.ast.Location
+import org.goodmath.pica.ast.types.TypeVar
 import org.goodmath.pica.util.Symbol
 import org.goodmath.pica.util.twist.Twist
 
@@ -9,6 +10,8 @@ abstract class BosonPattern(val optionName: Symbol, loc: Location): AstNode(loc)
 }
 
 class BosonPatternBinding(val fieldName: Symbol, val boundVariable: Symbol, loc: Location): AstNode(loc) {
+
+
     override fun twist(): Twist =
         Twist.obj(
             "Action::Receive::PatternBinding",

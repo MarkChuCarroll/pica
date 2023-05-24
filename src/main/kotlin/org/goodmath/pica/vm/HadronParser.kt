@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("UNCHECKED_CAST")
+
 package org.goodmath.pica.vm
 
 import org.antlr.v4.runtime.CharStream
@@ -23,7 +25,7 @@ import org.antlr.v4.runtime.tree.ParseTreeProperty
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.goodmath.pica.ast.Identifier
-import org.goodmath.pica.ast.Location
+import org.goodmath.pica.ast.SystemLocation
 
 class HadronParser: QuarkPlasmaAssemblyListener {
     fun parse(input: CharStream): HadronSpec {
@@ -47,7 +49,7 @@ class HadronParser: QuarkPlasmaAssemblyListener {
 
     private var hadron: HadronSpec? = null
 
-    fun getHadron(): HadronSpec = hadron!!
+    private fun getHadron(): HadronSpec = hadron!!
 
 
     override fun visitTerminal(node: TerminalNode) {
@@ -66,16 +68,16 @@ class HadronParser: QuarkPlasmaAssemblyListener {
     }
 
     override fun exitModule(ctx: QuarkPlasmaAssemblyParser.ModuleContext) {
-        val id = Identifier.fromString(ctx.id.text, Location.None)
+        val id = Identifier.fromString(ctx.id.text, SystemLocation("hadron loader"))
         val reqs = getValueFor(ctx.idList()) as List<Identifier>
         val metaValues: MutableList<Pair<Identifier, Any>> = ArrayList()
         ctx.metaTag().forEach { mt ->
             metaValues.add(getValueFor(mt) as Pair<Identifier, Any>)
         }
-        val instrs = getValueFor(ctx.body()) as List<Instruction>
+        val instructions = getValueFor(ctx.body()) as List<Instruction>
         val quarks = ctx.quark().map { getValueFor(it) as QuarkSpec }
         val bosons = ctx.boson().map { getValueFor(it) as BosonSpec }
-        hadron = HadronSpec(id, reqs, metaValues, bosons, quarks,instrs)
+        hadron = HadronSpec(id, reqs, metaValues, bosons, quarks,instructions)
     }
 
     override fun enterBoson(ctx: QuarkPlasmaAssemblyParser.BosonContext) {
@@ -188,7 +190,7 @@ class HadronParser: QuarkPlasmaAssemblyListener {
     }
 
     override fun exitLabeledInstruction(ctx: QuarkPlasmaAssemblyParser.LabeledInstructionContext) {
-        val label = ctx.ID()?.let { it.text}
+        val label = ctx.ID()?.text
         val instr = getValueFor(ctx.instruction()) as Instruction
         label?.let {instr.label = it }
         setValueFor(ctx, instr)
@@ -481,7 +483,7 @@ class HadronParser: QuarkPlasmaAssemblyListener {
         val src = getValueFor(ctx.value) as Reg
         val type = getValueFor(ctx.ident()) as Identifier
         val idx = Integer.parseInt(ctx.field.text)
-        setValueFor(ctx, BSetField(null, target, idx, src))
+        setValueFor(ctx, BSetField(null, target, type, idx, src))
     }
 
     override fun enterCnew(ctx: QuarkPlasmaAssemblyParser.CnewContext) {
@@ -919,8 +921,8 @@ class HadronParser: QuarkPlasmaAssemblyListener {
     }
 
     override fun exitSel(ctx: QuarkPlasmaAssemblyParser.SelContext) {
-        val conts = getValueFor(ctx.regList()) as List<Reg>
-        setValueFor(ctx, Select(null, conts))
+        val continuations = getValueFor(ctx.regList()) as List<Reg>
+        setValueFor(ctx, Select(null, continuations))
     }
 
     override fun enterRecv(ctx: QuarkPlasmaAssemblyParser.RecvContext) {
@@ -961,6 +963,6 @@ class HadronParser: QuarkPlasmaAssemblyListener {
     }
 
     override fun exitIdent(ctx: QuarkPlasmaAssemblyParser.IdentContext) {
-        setValueFor(ctx, Identifier.fromList(ctx.ID().map { it.text }, Location.None))
+        setValueFor(ctx, Identifier.fromList(ctx.ID().map { it.text }, SystemLocation("hadron reader")))
     }
 }

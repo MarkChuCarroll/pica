@@ -1,6 +1,8 @@
 package org.goodmath.pica.ast.expr
 
 import org.goodmath.pica.ast.Location
+import org.goodmath.pica.ast.types.Type
+import org.goodmath.pica.ast.types.TypeVar
 import org.goodmath.pica.util.twist.Twist
 
 enum class Operator {
@@ -29,7 +31,13 @@ enum class Operator {
     }
 }
 
-class OperatorExpr(val op: Operator, val operands: List<Expr>, loc: Location) : Expr(loc) {
+class OperatorExpr(val op: Operator, val operands: List<Expr>, loc: Location,
+    override val boundFrom: OperatorExpr? = null) : Expr(loc) {
+
+    override fun bind(typeBindings: Map<TypeVar, Type>): Expr {
+        return OperatorExpr(op, operands.map { it.bind(typeBindings) }, loc, this)
+    }
+
     override fun twist(): Twist =
         Twist.obj(
             "Expr::Operator",

@@ -19,7 +19,10 @@ import org.goodmath.pica.ast.AstNode
 import org.goodmath.pica.ast.Location
 
 
-// SType => Syntactic Type
-abstract class SType(val typeArgs: List<SType>, loc: Location): AstNode(loc) {
+abstract class Type(loc: Location): AstNode(loc) {
+    abstract val boundFrom: Type?
+    abstract fun bind(bindings: Map<TypeVar, Type>): Type
+
+    abstract fun isSatisfiedBy(candidateType: Type): Boolean
 }
 

@@ -4,7 +4,7 @@ import org.antlr.v4.runtime.CharStreams
 import org.goodmath.pica.HadronScope
 import org.goodmath.pica.RootScope
 import org.goodmath.pica.ast.Identifier
-import org.goodmath.pica.ast.Location
+import org.goodmath.pica.ast.SystemLocation
 import org.goodmath.pica.parser.AstParser
 import org.goodmath.pica.util.PicaErrorLog
 import org.goodmath.pica.util.PicaIOException
@@ -25,8 +25,8 @@ class Compiler(private val sourceDirs: List<File>, private val sources: List<Fil
     }
 
     private fun parseModule(file: File, id: Identifier) {
-        System.out.println("Reading $file")
-        val parser = AstParser(id.toString())
+        println("Reading $file")
+        val parser = AstParser(id)
         val loadedModule = parser.parse(CharStreams.fromFileName(file.canonicalPath))
         val scope = HadronScope(id, loadedModule)
         RootScope.setHadronScope(id, scope)
@@ -58,7 +58,7 @@ class Compiler(private val sourceDirs: List<File>, private val sources: List<Fil
             if (File(dir, file.path).exists()) {
                 val relativePath = file.relativeTo(dir).path
                 return Identifier.fromList(relativePath.dropLast(5).split("/"),
-                    Location.None)
+                    SystemLocation("source file $relativePath"))
             }
         }
         throw PicaErrorLog.logException(PicaIOException("Source file $file not found in source path", null))

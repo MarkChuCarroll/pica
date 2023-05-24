@@ -213,12 +213,14 @@ class BNew(
 class BSetField(
     label: String?,
     val target: Reg,
+    val typeName: Identifier,
     val field: Int,
     val source: Reg): Instruction(label) {
     override fun twist(): Twist =
         Twist.obj("Instr::BsetField",
             Twist.opt(label?.let { Twist.attr("label", it) } ),
             Twist.value("target", target),
+            Twist.attr("typeName", typeName.toString()),
             Twist.attr("field", field.toString()),
             Twist.value("source", source)
         )

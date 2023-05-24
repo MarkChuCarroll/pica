@@ -10,8 +10,8 @@ import kotlin.test.assertEquals
 
 class ParserTest {
 
-    fun parse(input: String): HadronDefinition {
-        val parser = AstParser("test")
+    private fun parse(input: String): HadronDefinition {
+        val parser = AstParser(Identifier.fromString("test", SystemLocation("test")))
         return parser.parse(CharStreams.fromString(input))
     }
 
@@ -738,8 +738,8 @@ class ParserTest {
                    
         quark Main is
         do
-           var pinger: Pinger = !Pinger()
-           var ponger: Ponger = !Ponger(pinger)
+           var pinger: Pinger = create Pinger()
+           var ponger: Ponger = create Ponger(pinger)
            send ponger.p(Ping(0))
         end@quark
 

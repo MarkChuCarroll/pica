@@ -18,7 +18,9 @@ package org.goodmath.pica.ast.defs
 import org.goodmath.pica.ast.AstNode
 import org.goodmath.pica.ast.Identifier
 import org.goodmath.pica.ast.Location
+import org.goodmath.pica.ast.types.Type
 import org.goodmath.pica.ast.types.TypeVar
+import org.goodmath.pica.util.PicaCompileException
 import org.goodmath.pica.util.Symbol
 
 abstract class Definition(
@@ -28,5 +30,26 @@ abstract class Definition(
     loc: Location
 ): AstNode(loc) {
     val id = Identifier(hadronId, name, loc)
+
+    abstract fun instantiate(typeArgs: List<Type>): Definition
+
+    fun validateTypeParameters(typeArgs: List<Type>) {
+        if (typeArgs.size != typeParams.size) {
+            throw PicaCompileException("$name takes ${typeParams.size} type parameters, but you only supplied ${typeArgs.size}")
+        }
+        typeParams.zip(typeArgs).map { (x, y) -> validateTypeParam(x, y)}
+    }
+
+    fun validateTypeParam(param: TypeVar, actualType: Type) {
+        if (param.constraint == null || param.constraint.isEmpty()) {
+            return
+        }
+        for (c in param.constraint) {
+            if (!c.isSatisfiedBy(actualType)) {
+                throw PicaCompileException("$name's type argument ${actualType} does not satisfy the constraint <${c} of the parameter ${param.name}")
+            }
+        }
+
+    }
 }
 

@@ -1,6 +1,5 @@
 package org.goodmath.pica
 
-import org.goodmath.pica.analysis.DeprecatedConcreteType
 import org.goodmath.pica.ast.AstNode
 import org.goodmath.pica.ast.defs.Definition
 import org.goodmath.pica.ast.Identifier
@@ -11,16 +10,17 @@ import org.goodmath.pica.util.twist.Twistable
 
 abstract class Scope: Twistable {
     abstract fun getDefinition(name: Identifier): Definition?
-    abstract fun getType(name: Identifier): DeprecatedConcreteType?
 
-    abstract fun setType(name: Symbol, type: DeprecatedConcreteType)
 
 }
 
 object RootScope: Scope() {
     private val defs = HashMap<Symbol, Definition>()
-    private val types = HashMap<Symbol, DeprecatedConcreteType>()
     private val scopes = HashMap<Identifier, HadronScope>()
+
+    fun getHadronScope(id: Identifier): HadronScope? {
+        return scopes[id]
+    }
 
     override fun getDefinition(name: Identifier): Definition? {
         if (name.hadronId == null) {
@@ -28,26 +28,6 @@ object RootScope: Scope() {
         } else {
             return scopes[name.hadronId]?.getDefinition(name)
         }
-    }
-
-    override fun getType(name: Identifier): DeprecatedConcreteType? {
-        if (name.hadronId == null) {
-            return types[name.name]
-        } else {
-            return scopes[name.hadronId]?.getType(name)
-        }
-    }
-
-    override fun setType(name: Symbol, type: DeprecatedConcreteType) {
-        types.put(name, type)
-    }
-
-    fun getHadronScope(name: Identifier): HadronScope? {
-        return scopes[name]
-    }
-
-    fun setHadronScope(name: Identifier, scope: HadronScope) {
-        scopes[name] = scope
     }
 
     override fun twist(): Twist =
@@ -60,11 +40,14 @@ object RootScope: Scope() {
             )
         )
 
+    fun setHadronScope(id: Identifier, scope: HadronScope) {
+        this.scopes[id] = scope
+    }
+
 }
 
 class HadronScope(val id: Identifier, val hadron: HadronDefinition): Scope() {
     val defs = HashMap<Symbol, Definition>()
-    val types = HashMap<Symbol, DeprecatedConcreteType>()
     val imports = HashMap<Symbol, Identifier>()
 
     init {
@@ -95,25 +78,6 @@ class HadronScope(val id: Identifier, val hadron: HadronDefinition): Scope() {
         }
     }
 
-    override fun getType(name: Identifier): DeprecatedConcreteType? {
-        return when (name.hadronId) {
-            null -> {
-                imports[name.name]?.let { getType(it) }
-                    ?: types[name.name] ?: RootScope.getType(name)
-            }
-            id -> {
-                types[name.name]
-            }
-            else -> {
-                RootScope.getType(name)
-            }
-        }
-
-    }
-
-    override fun setType(name: Symbol, type: DeprecatedConcreteType) {
-        types[name] = type
-    }
 
     override fun twist(): Twist =
         Twist.obj("Scope::Hadron",
@@ -133,7 +97,6 @@ class HadronScope(val id: Identifier, val hadron: HadronDefinition): Scope() {
 
 class LocalScope(val parent: Scope, val origin: AstNode): Scope() {
     val definitions = HashMap<Symbol, Definition>()
-    val types = HashMap<Symbol, DeprecatedConcreteType>()
 
     override fun getDefinition(name: Identifier): Definition? {
         return if (name.hadronId == null) {
@@ -147,21 +110,6 @@ class LocalScope(val parent: Scope, val origin: AstNode): Scope() {
         }
     }
 
-    override fun getType(name: Identifier): DeprecatedConcreteType? {
-        return if (name.hadronId == null) {
-            if (name.name in types) {
-                types[name.name]
-            } else {
-                parent.getType(name)
-            }
-        } else {
-            parent.getType(name)
-        }
-    }
-
-    override fun setType(name: Symbol, type: DeprecatedConcreteType) {
-        types.put(name, type)
-    }
 
     override fun twist(): Twist =
         Twist.leaf("LocalScope")
