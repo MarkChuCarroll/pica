@@ -16,14 +16,22 @@ class FlavorDef(
     loc: Location,
     val boundFrom: FlavorDef? = null
 ): Definition(hadronId, name, typeParams, loc) {
+
+    init {
+        channels.map { it.setOuterDefinition(this) }
+    }
+
+    override fun isFullyConcrete(): Boolean {
+        return composes.all { it.isFullyConcrete() } &&
+                channels.all { it.type.isFullyConcrete() }
+    }
+
     override fun instantiate(typeArgs: List<Type>): Definition {
         validateTypeParameters(typeArgs)
-        validateTypeParameters(typeArgs)
-        val typeEnv = typeParams.zip(typeArgs).associate { (typeVar, concreteType) -> typeVar to concreteType}
-        return FlavorDef(hadronId, name, emptyList(),
-            composes.map { it.bind(typeEnv) }, channels.map { it.bind(typeEnv) }, loc,
-            this)
+        return registry.getOrCreateInstantiation(this, typeArgs)
     }
+
+
 
     override fun twist(): Twist =
         Twist.obj(
@@ -34,5 +42,16 @@ class FlavorDef(
             Twist.arr("composes", composes),
             Twist.arr("channels", channels)
         )
+
+    companion object {
+        private fun instantiator(flavor: FlavorDef, instantiationArguments: List<Type>): FlavorDef {
+            val typeEnv = flavor.typeParams.zip(instantiationArguments).associate { (typeVar, concreteType) -> typeVar to concreteType}
+            return FlavorDef(flavor.hadronId, flavor.name, emptyList(),
+                flavor.composes.map { it.bind(typeEnv) }, flavor.channels.map { it.bind(typeEnv) }, flavor.loc,
+                flavor)
+
+        }
+        val registry = InstantiationRegistry(this::instantiator)
+    }
 
 }

@@ -17,6 +17,10 @@ class TypeVar(val name: Symbol,
         TODO("Not yet implemented")
     }
 
+    override fun isFullyConcrete(): Boolean {
+        return false
+    }
+
     override fun twist(): Twist =
         Twist.obj("Type::TypeVar",
             Twist.attr("name", name.repr),

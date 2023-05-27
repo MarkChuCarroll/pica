@@ -19,6 +19,12 @@ class QuarkBehavior(
     val boundFrom: QuarkBehavior? = null
 ): AstNode(loc) {
 
+    lateinit var quarkDef: QuarkDefinition
+
+    fun setQuarkDefinition(q: QuarkDefinition) {
+        quarkDef = q
+    }
+
     override fun twist(): Twist =
         obj(
             "Def::Quark::Behavior",

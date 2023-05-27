@@ -31,6 +31,8 @@ abstract class Definition(
 ): AstNode(loc) {
     val id = Identifier(hadronId, name, loc)
 
+    abstract fun isFullyConcrete(): Boolean
+
     abstract fun instantiate(typeArgs: List<Type>): Definition
 
     fun validateTypeParameters(typeArgs: List<Type>) {

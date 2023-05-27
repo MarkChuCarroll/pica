@@ -13,6 +13,12 @@ import org.goodmath.pica.util.twist.value
 
 class ChannelDef(val name: Symbol, val type: ChannelType, loc: Location,
                  val boundFrom: ChannelDef? = null ): AstNode(loc) {
+
+    lateinit var outerDefinition: Definition
+    fun setOuterDefinition(d: Definition) {
+        outerDefinition = d
+    }
+
     override fun twist(): Twist =
         obj(
             "ChannelDef",

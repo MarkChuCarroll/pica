@@ -12,6 +12,10 @@ class BosonTupleOption(
     loc: Location,
     val boundFrom: BosonTuplePattern? = null
 ): BosonOption(name, loc) {
+    override fun isFullyConcrete(): Boolean {
+        return fields.all { it.isFullyConcrete() }
+    }
+
     override fun bind(typeEnv: Map<TypeVar, Type>): BosonOption {
         return BosonTupleOption(name, fields.map { it.bind(typeEnv) }, loc, null)
     }

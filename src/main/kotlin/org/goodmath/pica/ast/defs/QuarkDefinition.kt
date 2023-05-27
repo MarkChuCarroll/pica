@@ -6,6 +6,7 @@ import org.goodmath.pica.ast.types.Type
 import org.goodmath.pica.ast.types.TypeVar
 import org.goodmath.pica.util.Symbol
 import org.goodmath.pica.util.twist.Twist
+
 class QuarkDefinition(
     hadronId: Identifier,
     name: Symbol,
@@ -15,22 +16,24 @@ class QuarkDefinition(
     val channels: List<ChannelDef>,
     val slots: List<SlotDef>,
     val behaviors: List<QuarkBehavior>,
-    val body: List<Action>,
     loc: Location,
     val boundFrom: QuarkDefinition? = null
 ): Definition(hadronId, name, typeParams, loc) {
-    override fun instantiate(typeArgs: List<Type>): Definition {
-        validateTypeParameters(typeArgs)
-        val typeEnv = typeParams.zip(typeArgs).associate { (typeVar, concreteType) -> typeVar to concreteType}
-        return QuarkDefinition(hadronId, name, emptyList(),
-            valueParams.map { it.bind(typeEnv) },
-            flavors.map { it.bind(typeEnv) },
-            channels.map { it.bind(typeEnv) },
-            slots.map { it.bind(typeEnv) },
-            behaviors.map { it.bind(typeEnv) },
-            body.map { it.bind(typeEnv) },
-            loc, this)
 
+    init {
+        behaviors.map { it.setQuarkDefinition(this) }
+        channels.map { it.setOuterDefinition(this) }
+    }
+
+    override fun isFullyConcrete(): Boolean {
+        return typeParams.isEmpty() &&
+                flavors.all { it.isFullyConcrete() } &&
+                slots.all { it.type.isFullyConcrete() }
+    }
+
+    override fun instantiate(typeArgs: List<Type>): QuarkDefinition {
+        validateTypeParameters(typeArgs)
+        return QuarkDefinition.registry.getOrCreateInstantiation(this, typeArgs)
     }
 
     override fun twist(): Twist =
@@ -44,6 +47,24 @@ class QuarkDefinition(
             Twist.arr("flavors", flavors),
             Twist.arr("behaviors", behaviors),
             Twist.arr("slots", slots),
-            Twist.arr("body", body)
         )
+
+    companion object {
+        private fun instantiator(quark: QuarkDefinition, instantiationParameters: List<Type>): QuarkDefinition {
+            val typeEnv = quark.typeParams.zip(instantiationParameters)
+                .associate { (typeVar, concreteType) -> typeVar to concreteType }
+            return QuarkDefinition(
+                quark.hadronId, quark.name, emptyList(),
+                quark.valueParams.map { it.bind(typeEnv) },
+                quark.flavors.map { it.bind(typeEnv) },
+                quark.channels.map { it.bind(typeEnv) },
+                quark.slots.map { it.bind(typeEnv) },
+                quark.behaviors.map { it.bind(typeEnv) },
+                quark.loc, quark
+            )
+        }
+
+        val registry = InstantiationRegistry(this::instantiator)
+    }
 }
+

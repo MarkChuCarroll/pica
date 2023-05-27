@@ -63,12 +63,12 @@ A quark consists of three parts:
   messages on that channel. There's no way to build a one-way channel.
 * Actions: a quark specifies its behavior using an action. An action consists
   of a collection of parallel sub-actions, which can perform local computation
-  using the state, send messages, and recieve messages.
+  using the state, send messages, and receive messages.
 
 ## Boson Basics
 
-Bosons are very simple data types. Unlike an object-oriented language,
-there are virtually no behaviors associated with bosonSpecs. They're just
+Bosons are just simple data types - essentially nothing more than named tuples.
+Unlike an object-oriented language, there are virtually no behaviors associated with bosonSpecs. They're just
 completely passive data. A boson type is very similar to an algebraic
 type in a language like OCaml. The type has a name, which is used in
 type declarations; and it has a list of named type constructors. Each
@@ -92,63 +92,6 @@ parsed and transformed into cons format.
 [1, 2, 3]: [Int]List == Cons(1, Cons(2, Cons(3, Nil(unit))))
 ```
 
-## Functions
-
-Programmers are so used to functions that it's hard to imagine
-programming without them. For example, using the cons list above,
-how would you filter it for the even numbers?
-
-The "correct" way to do that in Pica would be to set up a quark
-which recieves elements on an input channel, and then sends
-elements that match the predicate on the output channel. But even
-then, if you wanted a parametric  filter, how would you do it?
-
-It's doable, but it's confusing to readers. So Pica provides
-a function construct. Under the covers, it behaves equivalently to
-a kind of quark.
-
-```
-function fact(n: Int): Int do
-  if n == 0 then
-    return 1
-  else
-    return n * fact(n - 1)
-  end
-end
-```
-
-Is equivalent to:
-```
-boson FactArg is
-   I(Int, chan Int)
-end
-
-quark fact
-  channels
-    in: chan FactArg
-  action
-    many
-      ?in do
-        on I(i, c) do
-          if i == 0 then
-            !c(1)
-          else
-            var c: chan Int = ^chan Int;
-            !fact.in(I(i-1, c))
-            ?c do
-               on Int(r) do
-                  !c(Int(i*r))
-                end
-            end
-          end
-        end
-      end
-    end
-  end
-end
-```
-
-
 
 ## Example
 
@@ -164,13 +107,13 @@ token, it sends it as a boson on its output channel.
 ```
 boson ScannerOutput is
     Token{type: String, content: String, line: Int}
-or  EndOfStream(Unit)
-or  ScanError{message: String, line: Int}
+|  EndOfStream(Unit)
+|  ScanError{message: String, line: Int}
 end
 
 boson InputStreamEvent is
   More(Char)
-or End(Unit)
+| End()
 end
 
 quark InputStream(path: String)
@@ -180,28 +123,49 @@ quark InputStream(path: String)
 end
 
 
-quark Scanner(in: InputStream)
-  state
+quark Scanner(in: InputStream) is
+     chan output: ScannerOutput
      slot input: InputStream = in.chars
      slot currentToken: String = ""
-  channels
-     chan output: ScannerOutput
-  action
-    repeat
-        ?input do
+     do
+        rec input do
             on More(c) do
                 currentToken += c;
                 if ... then
-                    !output(Token{type: "t", content: currentToken, line: ...});
+                    send output(Token{type: "t", content: currentToken, line: ...});
                     currentToken = ""
                 end
             end
             on End(u) do
-                !output(Token{type: "t", content: currentToken, line: ...});
-                !output(EndOfStream(Unit);
+                send output(Token{type: "t", content: currentToken, line: ...});
+                send output(EndOfStream(Unit);
                 exit
             end
         end
     end
 end
 ```
+
+
+## Quarks
+
+A quark is the fundamental construct of Pica. It's based on an action
+from the synchronous &pi;-calculus. It's basically a lightweight thread
+that communicates with other quarks by passing messages. The only way that
+a quark can do anything is by sending or receiving messages.
+
+A quark declaration includes:
+* a set of _slots_ which contain the quark's state;
+* a list of parameters, which are used to initialize the quark's slots;
+* a set of named _channels_ which are used to send and receive messages.
+  The quark's behaviors may create other channels, but they'll only be
+  accessible to other quarks if they're sent via a message; the channels 
+  from the quark declaration are publicly visible.
+* a set of _behaviors_ which define how the quark communicates with other
+  quarks in the program. A behavior can take a set of parameters, and it
+  defines a set of _actions_ which the quark will execute.
+* A _body_, which is just the default behavior that the quark runs when it's 
+  created.
+
+### Actions
+

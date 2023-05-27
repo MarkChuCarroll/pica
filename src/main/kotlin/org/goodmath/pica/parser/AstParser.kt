@@ -148,9 +148,11 @@ class AstParser(private val hadronId: Identifier): PicaGrammarListener  {
         val channels = ctx.channelDef()?.let { cds -> cds.map { getValueFor(it) as ChannelDef }}.orEmpty()
         val slots = ctx.slotDef()?.let { sls -> sls.map { getValueFor(it) as SlotDef }}.orEmpty()
         val behaviors = ctx.behaviorDef()?.let { bs -> bs.map { getValueFor(it) as QuarkBehavior }}.orEmpty()
+
         val actions = ctx.action().map { getValueFor(it) as Action }
+        val defaultBehavior = QuarkBehavior(Symbol.fromString("%default%"), emptyList(), actions, actions[0].loc)
         setValueFor(ctx,
-            QuarkDefinition(hadronId, name, typeParams, args, flavors, channels, slots, behaviors, actions, loc(ctx)))
+            QuarkDefinition(hadronId, name, typeParams, args, flavors, channels, slots, behaviors, loc(ctx)))
     }
 
 
@@ -424,6 +426,13 @@ class AstParser(private val hadronId: Identifier): PicaGrammarListener  {
         setValueFor(ctx, AdoptAction(name, args, loc(ctx)))
     }
 
+    override fun enterExitAction(ctx: PicaGrammarParser.ExitActionContext) {
+    }
+
+    override fun exitExitAction(ctx: PicaGrammarParser.ExitActionContext) {
+        setValueFor(ctx, ExitAction(loc(ctx)))
+    }
+
     override fun enterReceiveClause(ctx: PicaGrammarParser.ReceiveClauseContext) {
     }
 
@@ -634,6 +643,15 @@ class AstParser(private val hadronId: Identifier): PicaGrammarListener  {
         val qt = getValueFor(ctx.type()) as Type
         val args = ctx.exprList()?.let { getValueFor(it) as List<Expr> }.orEmpty()
         setValueFor(ctx, CreateQuarkExpr(qt, args, loc(ctx)))
+    }
+
+    override fun enterCallExpr(ctx: PicaGrammarParser.CallExprContext) {
+    }
+
+    override fun exitCallExpr(ctx: PicaGrammarParser.CallExprContext) {
+        val target = getValueFor(ctx.t) as Expr
+        val args = getValueFor(ctx.exprList()) as List<Expr>
+        setValueFor(ctx, CallExpr(target, args, loc(ctx)))
     }
 
     override fun enterListExpr(ctx: PicaGrammarParser.ListExprContext) {

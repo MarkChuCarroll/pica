@@ -15,6 +15,10 @@ class NamedType(val typeId: Identifier, val typeArgs: List<Type>, loc: Location,
         TODO("Not yet implemented")
     }
 
+    override fun isFullyConcrete(): Boolean {
+        return typeArgs.all { it.isFullyConcrete() }
+    }
+
     override fun twist(): Twist =
         Twist.obj("Type::Named",
             Twist.attr("id", typeId.toString()),

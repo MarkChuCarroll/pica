@@ -6,6 +6,18 @@
  *
  * 
  *
+ * 
+ *
+ * 
+ *
+ * 
+ *
+ * 
+ *
+ * 
+ *
+ * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software distributed under the License
@@ -17,7 +29,7 @@ grammar PicaGrammar;
 
 @header { package org.goodmath.pica.parser; }
 
-hadron: ( useDef )* ( definition)*;
+hadron: ( useDef)* ( definition)*;
 
 useDef: 'use' ident ( '::' '{' ID ( ',' ID)* '}')?;
 
@@ -27,7 +39,7 @@ definition:
 	| bosonDef	# bosonDefChoice;
 
 flavorDef:
-	'flavor' (typeParamBlock)? ID (':' composes = typeList)? 'is' channelDef* 'end' (
+	'flavor' (typeParamBlock)? ID ('(' composes = typeList ')')? 'is' channelDef* 'end' (
 		'@flavor'
 	)?;
 
@@ -35,14 +47,14 @@ channelDef: 'chan' ID ( '[' dir ']')? ':' type;
 
 quarkDef:
 	'quark' (typeParamBlock)? ID (argSpec)? (
-		':' flavors = typeList
-	)? // implemented flavors
+		'provides' '(' flavors = typeList ')'
+	)? // provided flavors
 	'is' (channelDef | slotDef | behaviorDef)* 'do' action+ 'end' (
 		'@quark'
 	)?;
 
 behaviorDef:
-	'behavior' ID '(' typedIdList? ')' 'is' action+ 'end' (
+	'behavior' ID '(' TypedIdList? ')' 'is' action+ 'end' (
 		'@behavior'
 	)?;
 
@@ -64,7 +76,7 @@ type: namedType | channelType;
 
 namedType: ( typeArgBlock)? ident;
 
-channelType: 'chan' ( '[' dir ']')? type;
+channelType: 'chan' ( ':' dir)? type;
 
 dir: 'in' | 'out';
 
@@ -79,7 +91,7 @@ bosonOption:
 	ID '(' typeList ')'			# tupleBosonOption
 	| ID '{' typedIdList '}'	# structBosonOption;
 
-typedIdList: typedId (',' typedId)*;
+typedId <List: typedId (',' typedId)*;
 
 typedId: ID ':' type;
 
@@ -96,7 +108,8 @@ action:
 	| cond										# condAction
 	| 'while' '(' expr ')' 'do' action+ 'end'	# whileAction
 	| 'for' ID 'in' expr 'do' action+ 'end'		# forAction
-	| 'adopt' ID '(' exprList? ')'				# adoptBehaviorAction;
+	| 'adopt' ID '(' exprList? ')'				# adoptBehaviorAction
+	| 'exit'									# exitAction;
 
 receiveClause: 'on' pattern 'do' action+ 'end';
 
@@ -109,8 +122,9 @@ condClause: c = expr 'then' action+;
 
 expr:
 	// Create a new quark.
-	'create' type '(' (exprList)? ')'										# runExpr
+	'create' type '(' (exprList)? ')'									# runExpr
 	| l = expr op = ('and' | 'or') r = expr								# logicExpr
+	| t = expr '^' '(' ( exprList)? ')'									# callExpr
 	| c = expr '?' t = expr ':' f = expr								# condExpr
 	| l = expr op = ('==' | '!=' | '>' | '>=' | '<' | '<=') r = expr	# compareExpr
 	| l = expr op = ('+' | '-') r = expr								# addExpr

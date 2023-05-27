@@ -11,6 +11,7 @@ class AltAction(val body: List<Action>, loc: Location,
         return AltAction(body.map { it.bind(typeEnv)}, loc, this)
     }
 
+
     override fun twist(): Twist =
         Twist.obj(
             "Action::Alt",

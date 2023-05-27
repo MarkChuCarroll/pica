@@ -13,6 +13,10 @@ class BosonStructOption(
     loc: Location,
     val boundFrom: BosonStructOption? = null
 ): BosonOption(name, loc) {
+    override fun isFullyConcrete(): Boolean {
+        return fields.all { it.type.isFullyConcrete() }
+    }
+
     override fun bind(typeEnv: Map<TypeVar, Type>): BosonOption {
         return BosonStructOption(name, fields.map { it ->
             TypedIdentifier(it.name, it.type.bind(typeEnv), it.loc)

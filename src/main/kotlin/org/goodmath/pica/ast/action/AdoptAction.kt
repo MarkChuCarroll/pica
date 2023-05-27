@@ -17,6 +17,7 @@ class AdoptAction(val behaviorName: Symbol, val args: List<Expr>, loc: Location,
         return AdoptAction(behaviorName, boundArgs, loc, this)
     }
 
+
     override fun twist(): Twist =
         obj(
             "Action::AdoptBehavior",

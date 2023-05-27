@@ -24,5 +24,7 @@ abstract class Type(loc: Location): AstNode(loc) {
     abstract fun bind(bindings: Map<TypeVar, Type>): Type
 
     abstract fun isSatisfiedBy(candidateType: Type): Boolean
+
+    abstract fun isFullyConcrete(): Boolean
 }
 

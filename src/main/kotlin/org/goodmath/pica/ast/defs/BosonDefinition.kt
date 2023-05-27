@@ -15,11 +15,18 @@ class BosonDefinition(
     loc: Location,
     val instantiatedFrom: BosonDefinition? = null
 ): Definition(hadronId, name, typeParams, loc) {
+
+    init {
+        options.forEach { it.setBosonDefinition(this) }
+    }
+
+    override fun isFullyConcrete(): Boolean {
+        return typeParams.isEmpty() && options.all { it.isFullyConcrete() }
+    }
+
     override fun instantiate(typeArgs: List<Type>): Definition {
         validateTypeParameters(typeArgs)
-        val typeEnv = typeParams.zip(typeArgs).associate { (typeVar, concreteType) -> typeVar to concreteType}
-        return BosonDefinition(hadronId, name, emptyList(), options.map { it -> it.bind(typeEnv) }, loc,
-            this)
+        return registry.getOrCreateInstantiation(this, typeArgs)
     }
 
     override fun twist(): Twist =
@@ -33,5 +40,20 @@ class BosonDefinition(
                 options
             )
         )
+    companion object {
+
+        private fun instantiator(boson: BosonDefinition, instantiatorParameters: List<Type>): BosonDefinition {
+            val typeEnv = boson.typeParams.zip(instantiatorParameters).associate { (typeVar, concreteType) -> typeVar to concreteType}
+            return BosonDefinition(
+                boson.hadronId,
+                boson.name,
+                emptyList(),
+                boson.options.map { it -> it.bind(typeEnv) },
+                boson.loc,
+                boson)
+        }
+
+        val registry = InstantiationRegistry(this::instantiator)
+    }
 
 }

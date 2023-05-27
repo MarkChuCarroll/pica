@@ -21,9 +21,7 @@ import org.goodmath.pica.ast.types.Type
 import org.goodmath.pica.ast.types.TypeVar
 
 abstract class Action(loc: Location): AstNode(loc) {
-    abstract val boundFrom: Action?
-    abstract fun bind(typeEnv: Map<TypeVar, Type>): Action
-
+    abstract fun bind(typeEnv: Map<TypeVar, Type>): QuantizedAction
 
 }
 

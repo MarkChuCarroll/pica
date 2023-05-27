@@ -15,6 +15,10 @@ class ChannelType(val direction: Dir, val bosonType: Type, loc: Location,
         TODO("Not yet implemented")
     }
 
+    override fun isFullyConcrete(): Boolean {
+        return bosonType.isFullyConcrete()
+    }
+
     override fun twist(): Twist =
         obj(
             "Type::Channel",
