@@ -1,0 +1,13 @@
+[package]
+name = "pica"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[build-dependencies] # <-- We added this and everything after!
+lalrpop = "0.20.2"
+
+[dependencies]
+either = "1.10.0"
+lalrpop-util = { version = "0.20.2", features = ["lexer", "unicode"] }
+
