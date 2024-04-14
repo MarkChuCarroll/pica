@@ -4,35 +4,19 @@ use either::Either::{self,Left,Right};
 
 grammar<'input>(input: &'input str, hadron_name: &'input str);
 
-Comma<T>: Vec<T> = {
-    <mut v:(<T> ",")*> <e:T> => {
-                    v.push(e);
-                    v
-    }
-};
-
-Boxed<T>: Box<T> = {
-    <t:T> => Box::new(t)
-}
-
- Bar<T>: Vec<T> = {
-    <mut v:(<T> "|")*> <e:T> => {
-                    v.push(e);
-                    v
-    }
-};
+// Top-level definitions
 
 pub Hadron: ast::HadronDef = {
-    <uses:UseDef+>
+    <uses:UseDecl+>
     <defs:Definition+>  =>
 
-    ast::HadronDef{name: hadron_name.to_owned(), uses: uses, defs: defs }
+    ast::HadronDef{id: hadron_name.to_owned(), use_decls: uses, defs: defs }
 
 }
 
-UseDef: ast::UseDef = {
+UseDecl: ast::UseDecl = {
     "use" <id: Identifier> <names:( "{" <Comma<SYMBOL>> "}" )?> =>
-        ast::UseDef{module_name: id, names: names}
+        ast::UseDecl{module_name: id, names: names}
 }
 
 pub Definition: ast::Definition = {
@@ -41,73 +25,65 @@ pub Definition: ast::Definition = {
     <b:BosonDef> => ast::Definition::B(b)
 }
 
-FlavorDef: ast::FlavorDef = {
-    "flavor" <tps:TypeParamBlock?> <name:SYMBOL> <cs:ComposesBlock?> "is"
+pub FlavorDef: ast::FlavorDef = {
+    "flavor" <tps:TypeParamBlock?> <id:SYMBOL> <cs:ComposesBlock?> "is"
     <chs:ChannelDecl*>
     "end" ("@flavor")? =>
-    ast::FlavorDef{name: name,
+    ast::FlavorDef{id: id,
         type_params: tps,
         composes: cs,
         channels: chs}
 }
 
-ArgumentList: Vec<ast::Expr> = {
-    Comma<Expr>,
-    => Vec::new()
-}
 
-QuarkDef: ast::QuarkDef = {
-    "quark" <tps:TypeParamBlock?> <name:SYMBOL> <params:ValueParamBlock>
+pub QuarkDef: ast::QuarkDef = {
+    "quark" <tps:TypeParamBlock?> <id:SYMBOL> <params:ValueParamBlock>
       <ps:ProvidesBlock>  "is"
       <channels:ChannelDecl*>
       <slots:SlotDecl*>
       <behaviors:BehaviorDecl*>
-      "adopt" <beh:SYMBOL> "("<es:ArgumentList>")"
+      "adopt" <beh:SYMBOL> "("<es:CommaOpt<Expr>>")"
       "end" ("@quark")?   =>
       ast::QuarkDef {
-        name: name,
+        id: id,
         type_params: tps,
-        params: params,
+        value_params: params,
         provides: ps,
         slots: slots,
         behaviors: behaviors,
         channels: channels,
-        initial: (beh.to_string(), es)
+        initial_beh: (beh.to_string(), es)
       }
 
 }
 
-BosonDef: ast::BosonDef = {
-   "boson" <tps: TypeParamBlock?> <name:SYMBOL> "is"
+pub BosonDef: ast::BosonDef = {
+   "boson" <tps: TypeParamBlock?> <id:SYMBOL> "is"
       <options: Bar<BosonOptionDecl>>
    "end" ("@boson")? =>
 
-   ast::BosonDef{name: name, type_params: tps, options: options}
+   ast::BosonDef{id: id, type_params: tps, options: options}
 }
 
 BosonOptionDecl: ast::BosonOptionDecl = {
-	<name:SYMBOL> <params:BosonParamsSpec> =>
+	<id:SYMBOL> <params:BosonParamsSpec> =>
     match params {
-        ast::TempBosonParam::T(spec) => ast::BosonOptionDecl::TupleOptionDecl{name: name, values: spec},
-        ast::TempBosonParam::S(spec) => ast::BosonOptionDecl::StructOptionDecl{name: name, values: spec}
+        ast::TempBosonParam::T(spec) => ast::BosonOptionDecl::TupleOptionDecl{id: id, value_types: spec},
+        ast::TempBosonParam::S(spec) => ast::BosonOptionDecl::StructOptionDecl{id: id, field_types: spec}
     }
 }
 
 BosonParamsSpec: ast::TempBosonParam = {
-    "("  <ts:Comma<Type>?> ")" =>
-            match ts {
-                Some(types) => ast::TempBosonParam::T(types),
-                None => ast::TempBosonParam::T(Vec::new())
-            },
+    "("  <types:CommaOpt<Type>> ")" => ast::TempBosonParam::T(types),
     "{" <vs:Comma<ValueParamSpec>>"}" => ast::TempBosonParam::S(vs)
 }
 
 
 
 ChannelDecl: ast::ChannelDecl = {
-    "chan" <name:SYMBOL> ":" <dir:Direction> <t:Type> =>
+    "chan" <id:SYMBOL> ":" <dir:Direction> <t:Type> =>
     ast::ChannelDecl{
-        name: name,
+        id: id,
         channel_type: ast::ChannelType{direction:dir, value_type: t}}
 }
 
@@ -119,29 +95,28 @@ Direction: ast::Direction = {
 }
 
 SlotDecl: ast::SlotDecl = {
-    "slot" <s:SYMBOL> ":" <t:Type> "=" <e:Expr> =>
+    "slot" <id:SYMBOL> ":" <t:Type> "=" <e:Expr> =>
 
-    ast::SlotDecl{ name: s, value_type: t, init_value: e}
+    ast::SlotDecl{ id: id, value_type: t, init_value: e}
 }
 
 ProvidesBlock: Vec<ast::Type> = {
-    "provides" <Comma<Type>>,
-    => Vec::new()
+    <("provides" <CommaOpt<Type>>)>
 
 }
 
 ComposesBlock: Vec<ast::Type> = {
-    "("  <Comma<Type>>  ")"
+    "("  <CommaOpt<Type>>  ")"
 }
 
 TypeParamBlock: Vec<ast::TypeParamSpec> = {
-    <Comma<TypeParamSpec>>
+    "[" <Comma<TypeParamSpec>> "]"
 }
 
 TypeParamSpec: ast::TypeParamSpec = {
     <t:TYPEVAR> <constraint:(":" <Type>)?> =>
 
-    ast::TypeParamSpec{name: ast::TypeVar(t), constraint: constraint}
+    ast::TypeParamSpec{type_var: ast::TypeVar(t), constraint: constraint}
 }
 
 ValueParamBlock: Vec<ast::ValueParamSpec> = {
@@ -153,17 +128,17 @@ ValueParamBlock: Vec<ast::ValueParamSpec> = {
 }
 
 ValueParamSpec: ast::ValueParamSpec = {
-    <name:SYMBOL> ":" <t:Type>  =>
+    <id:SYMBOL> ":" <t:Type>  =>
 
-    ast::ValueParamSpec{name: name, value_type: t}
+    ast::ValueParamSpec{id: id, value_type: t}
 }
 
 BehaviorDecl: ast::BehaviorDecl = {
-    "behavior" <s:SYMBOL> <ps:ValueParamBlock?> "is"
+    "behavior" <id:SYMBOL> "(" <ps:CommaOpt<ValueParamSpec>> ")" "is"
         <body:Action+>
         "end" ("@behavior")? =>
 
-        ast::BehaviorDecl{ name: s, params: ps, actions: body}
+        ast::BehaviorDecl{ id: id, params: ps, actions: body}
 }
 
 
@@ -174,7 +149,7 @@ Identifier: ast::Identifier = {
     }
 }
 
-//////////// Actions
+// Actions
 
 Action: Box<ast::Action> = {
     "par" "{" <acts:Action+> "}" => Box::new(ast::Action::Par(acts)),
@@ -184,11 +159,11 @@ Action: Box<ast::Action> = {
     <ReceiveAction>,
     <lval:SYMBOL> ":=" <e:Expr> => Box::new(ast::Action::Assign{target: lval, value: e}),
     "var" <s:SYMBOL> ":" <t:Type> "=" <e:Expr> => Box::new(ast::Action::VarDecl{
-        name: s, var_type: t, init_value: e  }),
+        id: s, var_type: t, init_value: e  }),
     <CondAction>,
     <WhileLoop>,
     <ForLoop>,
-    "adopt" <b:SYMBOL> "(" <args:ArgumentList> ")" => Box::new(ast::Action::AdoptAction{ id: b, arguments: args}),
+    "adopt" <b:SYMBOL> "(" <args:CommaOpt<Expr>> ")" => Box::new(ast::Action::AdoptAction{ id: b, arguments: args}),
     "exit" => Box::new(ast::Action::ExitAction)
 }
 
@@ -246,7 +221,7 @@ BoxedTypeArgsBlock: Vec<Box<ast::Type>> = {
 
 Type: ast::Type = {
     <tas:BoxedTypeArgsBlock?>  <id:Identifier> =>
-        ast::Type::Named{ base_type_name: id,
+        ast::Type::Named{ base_type_id: id,
                           type_arguments: tas},
 
     "chan" <d:Direction> <t:Type> => ast::Type::ChannelType(Box::new(t), d),
@@ -255,10 +230,7 @@ Type: ast::Type = {
 
 
 //////////// Expressions
-BoxedExpr: Box<ast::Expr> = {
-    Boxed<Expr>
 
-}
 BoxedExprList: Vec<Box<ast::Expr>> = {
     <Comma<Boxed<Expr>>>,
     => Vec::new()
@@ -337,7 +309,7 @@ BosonValueExpr: ast::Expr = {
 }
 
 BosonNameBinding: (ast::Symbol, Box<ast::Expr>) = {
-    <name:SYMBOL> ":" <e:Boxed<Expr>> => (name, e)
+    <id:SYMBOL> ":" <e:Boxed<Expr>> => (id, e)
 }
 
 BosonArgs: Either<Option<Vec<Box<ast::Expr>>>, Vec<(ast::Symbol, Box<ast::Expr>)>> = {
@@ -346,8 +318,37 @@ BosonArgs: Either<Option<Vec<Box<ast::Expr>>>, Vec<(ast::Symbol, Box<ast::Expr>)
 }
 
 LValue: ast::LValue = {
-    <id:Identifier> => ast::LValue::Ident(id)
+    <id:Identifier> => ast::LValue(id)
 }
+
+////////////// Macros
+
+
+Comma<T>: Vec<T> = {
+    <mut v:(<T> ",")*> <e:T> => {
+                    v.push(e);
+                    v
+    }
+};
+
+CommaOpt<T>: Vec<T> = {
+    Comma<T>,
+    => Vec::new()
+}
+
+Boxed<T>: Box<T> = {
+    <t:T> => Box::new(t)
+}
+
+ Bar<T>: Vec<T> = {
+    <mut v:(<T> "|")*> <e:T> => {
+                    v.push(e);
+                    v
+    }
+};
+
+
+
 
 extern {
     type Location = usize;

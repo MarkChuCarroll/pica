@@ -1,9 +1,13 @@
-use lalrpop_util::lalrpop_mod;
 mod ast;
 mod lexer;
-mod twist;
+mod parser;
 
-lalrpop_mod!(grammar);
+mod twist;
+use lalrpop_util::lalrpop_mod;
+lalrpop_mod!(pub grammar);
+
+#[cfg(test)]
+mod parser_test;
 
 fn main() {
     println!("Hello, world!");

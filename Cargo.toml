@@ -10,4 +10,5 @@ lalrpop = "0.20.2"
 [dependencies]
 either = "1.10.0"
 lalrpop-util = { version = "0.20.2", features = ["lexer", "unicode"] }
+unicode_categories = "0.1.1"
 

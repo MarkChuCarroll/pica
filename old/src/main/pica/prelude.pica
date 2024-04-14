@@ -1,9 +1,0 @@
-
-flavor [T]Result is
-   return(t: T)
-end@flavor
-
-flavor [InputBoson, Output]Function is
-   call(params: InputBoson, result: [Output]Result)
-end
-
