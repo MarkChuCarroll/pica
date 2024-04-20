@@ -1,4 +1,4 @@
-use std::{collections::HashMap, str::CharIndices};
+use std::{collections::HashMap, fmt::Display, str::CharIndices};
 use unicode_categories::UnicodeCategories;
 mod linecol;
 mod tests;
@@ -6,9 +6,32 @@ mod tests;
 #[derive(Clone, Debug)]
 pub struct LexicalError {
     pub msg: String,
-    pub pos: usize,
     pub line: usize,
     pub column: usize,
+}
+
+impl std::error::Error for LexicalError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        None
+    }
+
+    fn description(&self) -> &str {
+        "deprecated but needs to be here for the compiler"
+    }
+
+    fn cause(&self) -> Option<&dyn std::error::Error> {
+        self.source()
+    }
+}
+
+impl Display for LexicalError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "LexicalError: {} at line {}, col {}",
+            self.msg, self.line, self.column
+        )
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -67,6 +90,7 @@ pub enum Token {
     Hadron,
     In,
     Is,
+    New,
     Not,
     On,
     Or,
@@ -88,8 +112,91 @@ pub enum Token {
     TypeVar(String),
     StrLit(String),
     IntLit(i64),
-    FloatLit(f64),
+    // String because floats don't behave nicely: they break hashable,
+    // equality, etc.
+    FloatLit(String),
     CharLit(char),
+}
+
+impl Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Token::Comma => write!(f, "{}", ","),
+            Token::Bang => write!(f, "{}", "!"),
+            Token::Bar => write!(f, "{}", "|"),
+            Token::Colon => write!(f, "{}", ":"),
+            Token::ColonColon => write!(f, "{}", "::"),
+            Token::ColonEq => write!(f, "{}", ":="),
+            Token::Div => write!(f, "{}", "/"),
+            Token::Dot => write!(f, "{}", "."),
+            Token::Equal => write!(f, "{}", "="),
+            Token::EqualEqual => write!(f, "{}", "=="),
+            Token::GE => write!(f, "{}", ">="),
+            Token::GT => write!(f, "{}", ">"),
+            Token::LE => write!(f, "{}", "<="),
+            Token::LT => write!(f, "{}", "<"),
+            Token::Minus => write!(f, "{}", "-"),
+            Token::Mod => write!(f, "{}", "%"),
+            Token::NotEqual => write!(f, "{}", "!="),
+            Token::Plus => write!(f, "{}", "+"),
+            Token::Times => write!(f, "{}", "*"),
+            Token::LParen => write!(f, "{}", "("),
+            Token::RParen => write!(f, "{}", ")"),
+            Token::LBrack => write!(f, "{}", "["),
+            Token::RBrack => write!(f, "{}", "]"),
+            Token::LCurly => write!(f, "{}", "{"),
+            Token::RCurly => write!(f, "{}", "}"),
+            Token::LCH => write!(f, "{}", "<<"),
+            Token::RCH => write!(f, "{}", ">>"),
+            Token::AtBehavior => write!(f, "{}", "@behavior"),
+            Token::AtBoson => write!(f, "{}", "@boson"),
+            Token::AtCond => write!(f, "{}", "@cond"),
+            Token::AtFlavor => write!(f, "{}", "@flavor"),
+            Token::AtFor => write!(f, "{}", "@for"),
+            Token::AtQuark => write!(f, "{}", "@quark"),
+            Token::AtWhile => write!(f, "{}", "@while"),
+            Token::Adopt => write!(f, "{}", "adopt"),
+            Token::And => write!(f, "{}", "and"),
+            Token::Behavior => write!(f, "{}", "behavior"),
+            Token::Boson => write!(f, "{}", "boson"),
+            Token::Both => write!(f, "{}", "both"),
+            Token::Chan => write!(f, "{}", "chan"),
+            Token::Cond => write!(f, "{}", "cond"),
+            Token::Create => write!(f, "{}", "create"),
+            Token::Do => write!(f, "{}", "do"),
+            Token::End => write!(f, "{}", "end"),
+            Token::Else => write!(f, "{}", "else"),
+            Token::Exit => write!(f, "{}", "exit"),
+            Token::Flavor => write!(f, "{}", "flavor"),
+            Token::For => write!(f, "{}", "for"),
+            Token::Hadron => write!(f, "{}", "hadron"),
+            Token::In => write!(f, "{}", "in"),
+            Token::Is => write!(f, "{}", "is"),
+            Token::New => write!(f, "{}", "new"),
+            Token::Not => write!(f, "{}", "not"),
+            Token::On => write!(f, "{}", "on"),
+            Token::Or => write!(f, "{}", "or"),
+            Token::Out => write!(f, "{}", "out"),
+            Token::Par => write!(f, "{}", "par"),
+            Token::Provides => write!(f, "{}", "provides"),
+            Token::Quark => write!(f, "{}", "quark"),
+            Token::Rec => write!(f, "{}", "rec"),
+            Token::Select => write!(f, "{}", "select"),
+            Token::Send => write!(f, "{}", "send"),
+            Token::Seq => write!(f, "{}", "seq"),
+            Token::Slot => write!(f, "{}", "slot"),
+            Token::Then => write!(f, "{}", "then"),
+            Token::Use => write!(f, "{}", "use"),
+            Token::Var => write!(f, "{}", "var"),
+            Token::While => write!(f, "{}", "while"),
+            Token::Symbol(s) => write!(f, "Symbol({})", s),
+            Token::TypeVar(s) => write!(f, "{}", s),
+            Token::StrLit(s) => write!(f, "\"{}\"", s),
+            Token::IntLit(i) => write!(f, "{}", i),
+            Token::FloatLit(fl) => write!(f, "{}", fl),
+            Token::CharLit(c) => write!(f, "'{}'", c),
+        }
+    }
 }
 
 pub struct Scanner<'input> {
@@ -126,6 +233,7 @@ impl<'input> Scanner<'input> {
                 ("hadron".to_string(), Token::Hadron),
                 ("In".to_string(), Token::In),
                 ("is".to_string(), Token::Is),
+                ("new".to_string(), Token::New),
                 ("not".to_string(), Token::Not),
                 ("on".to_string(), Token::On),
                 ("or".to_string(), Token::Or),
@@ -155,8 +263,9 @@ impl<'input> Scanner<'input> {
         result
     }
 
-    pub fn line_and_col(&self, pos: usize) -> (usize, usize) {
-        self.index.line_and_col_of(pos).unwrap()
+    pub fn line_and_col(&self, pos: usize) -> Location {
+        let (l, c) = self.index.line_and_col_of(pos).unwrap();
+        Location::new(l, c)
     }
 
     fn advance(&mut self) {
@@ -173,13 +282,36 @@ impl<'input> Scanner<'input> {
             None => false,
         }
     }
+}
 
-    fn current_pos(&self) -> Option<usize> {
-        self.current_char.map(|(p, _)| p)
+#[derive(Clone, Debug, Copy)]
+pub struct Location {
+    pub line: usize,
+    pub column: usize,
+}
+
+impl Location {
+    fn new(l: usize, c: usize) -> Location {
+        Location { line: l, column: c }
     }
 }
 
-pub type ScannerResult<'input> = Result<(usize, Token, usize), LexicalError>;
+impl Default for Location {
+    fn default() -> Self {
+        Self {
+            line: Default::default(),
+            column: Default::default(),
+        }
+    }
+}
+
+impl Display for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "line {}, column {}", self.line, self.column)
+    }
+}
+
+pub type ScannerResult<'input> = Result<(Location, Token, Location), LexicalError>;
 
 trait LexicalCategories {
     fn is_id_char(&self) -> bool;
@@ -188,10 +320,11 @@ trait LexicalCategories {
 
 impl LexicalCategories for char {
     fn is_id_char(&self) -> bool {
-        self.is_alphabetic()
+        (self.is_alphabetic()
             || self.is_numeric()
             || self.is_punctuation_connector()
-            || self.is_symbol_math()
+            || self.is_symbol_math())
+            && (*self != '<' && *self != '>')
     }
 
     fn is_id_start_char(&self) -> bool {
@@ -226,13 +359,11 @@ impl<'input> Iterator for Scanner<'input> {
 /// Each time that you switch states in the above explanation, you
 /// just call the new state function in the scanner code.
 impl<'input> Scanner<'input> {
-    fn lexical_error(&self, msg: &str, loc: usize) -> LexicalError {
-        let (line, col) = self.line_and_col(loc);
+    fn lexical_error(&self, msg: &str, loc: Location) -> LexicalError {
         LexicalError {
             msg: msg.to_string(),
-            line: line,
-            column: col,
-            pos: loc,
+            line: loc.line,
+            column: loc.column,
         }
     }
 
@@ -247,60 +378,118 @@ impl<'input> Scanner<'input> {
                 // the unambiguous single char tokens
                 Some((idx, '{')) => {
                     self.advance();
-                    return Some(Ok((idx, Token::LCurly, idx + 1)));
+                    return Some(Ok((
+                        self.line_and_col(idx),
+                        Token::LCurly,
+                        self.line_and_col(idx + 1),
+                    )));
                 }
                 Some((idx, '}')) => {
                     self.advance();
-                    return Some(Ok((idx, Token::RCurly, idx + 1)));
+                    return Some(Ok((
+                        self.line_and_col(idx),
+                        Token::RCurly,
+                        self.line_and_col(idx + 1),
+                    )));
                 }
                 Some((idx, '(')) => {
                     self.advance();
-                    return Some(Ok((idx, Token::LParen, idx + 1)));
+                    return Some(Ok((
+                        self.line_and_col(idx),
+                        Token::LParen,
+                        self.line_and_col(idx + 1),
+                    )));
                 }
                 Some((idx, ')')) => {
                     self.advance();
-                    return Some(Ok((idx, Token::RParen, idx + 1)));
+                    return Some(Ok((
+                        self.line_and_col(idx),
+                        Token::RParen,
+                        self.line_and_col(idx + 1),
+                    )));
                 }
                 Some((idx, '[')) => {
                     self.advance();
-                    return Some(Ok((idx, Token::LBrack, idx + 1)));
+                    return Some(Ok((
+                        self.line_and_col(idx),
+                        Token::LBrack,
+                        self.line_and_col(idx + 1),
+                    )));
                 }
                 Some((idx, ']')) => {
                     self.advance();
-                    return Some(Ok((idx, Token::RBrack, idx + 1)));
+                    return Some(Ok((
+                        self.line_and_col(idx),
+                        Token::RBrack,
+                        self.line_and_col(idx + 1),
+                    )));
                 }
                 Some((idx, ',')) => {
                     self.advance();
-                    return Some(Ok((idx, Token::Comma, idx + 1)));
+                    return Some(Ok((
+                        self.line_and_col(idx),
+                        Token::Comma,
+                        self.line_and_col(idx + 1),
+                    )));
                 }
                 Some((idx, '%')) => {
                     self.advance();
-                    return Some(Ok((idx, Token::Mod, idx + 1)));
+                    return Some(Ok((
+                        self.line_and_col(idx),
+                        Token::Mod,
+                        self.line_and_col(idx + 1),
+                    )));
                 }
                 Some((idx, '+')) => {
                     self.advance();
-                    return Some(Ok((idx, Token::Plus, idx + 1)));
+                    return Some(Ok((
+                        self.line_and_col(idx),
+                        Token::Plus,
+                        self.line_and_col(idx + 1),
+                    )));
                 }
                 Some((idx, '*')) => {
                     self.advance();
-                    return Some(Ok((idx, Token::Times, idx + 1)));
+                    return Some(Ok((
+                        self.line_and_col(idx),
+                        Token::Times,
+                        self.line_and_col(idx + 1),
+                    )));
                 }
                 Some((idx, '.')) => {
                     self.advance();
-                    return Some(Ok((idx, Token::Dot, idx + 1)));
+                    return Some(Ok((
+                        self.line_and_col(idx),
+                        Token::Dot,
+                        self.line_and_col(idx + 1),
+                    )));
                 }
                 Some((idx, '|')) => {
                     self.advance();
-                    return Some(Ok((idx, Token::Bar, idx + 1)));
+                    return Some(Ok((
+                        self.line_and_col(idx),
+                        Token::Bar,
+                        self.line_and_col(idx + 1),
+                    )));
                 }
                 Some((idx, '!')) => {
                     self.advance();
                     match self.current_char {
                         Some((_, '=')) => {
                             self.advance();
-                            return Some(Ok((idx, Token::NotEqual, idx + 2)));
+                            return Some(Ok((
+                                self.line_and_col(idx),
+                                Token::NotEqual,
+                                self.line_and_col(idx + 2),
+                            )));
                         }
-                        _ => return Some(Ok((idx, Token::Bang, idx + 1))),
+                        _ => {
+                            return Some(Ok((
+                                self.line_and_col(idx),
+                                Token::Bang,
+                                self.line_and_col(idx + 1),
+                            )))
+                        }
                     }
                 }
                 Some((idx, '=')) => {
@@ -308,9 +497,19 @@ impl<'input> Scanner<'input> {
                     match self.current_char {
                         Some((_, '=')) => {
                             self.advance();
-                            return Some(Ok((idx, Token::EqualEqual, idx + 2)));
+                            return Some(Ok((
+                                self.line_and_col(idx),
+                                Token::EqualEqual,
+                                self.line_and_col(idx + 2),
+                            )));
                         }
-                        _ => return Some(Ok((idx, Token::Equal, idx + 1))),
+                        _ => {
+                            return Some(Ok((
+                                self.line_and_col(idx),
+                                Token::Equal,
+                                self.line_and_col(idx + 1),
+                            )))
+                        }
                     }
                 }
                 Some((idx, '>')) => {
@@ -318,13 +517,27 @@ impl<'input> Scanner<'input> {
                     match self.current_char {
                         Some((_, '>')) => {
                             self.advance();
-                            return Some(Ok((idx, Token::RCH, idx + 2)));
+                            return Some(Ok((
+                                self.line_and_col(idx),
+                                Token::RCH,
+                                self.line_and_col(idx + 2),
+                            )));
                         }
                         Some((_, '=')) => {
                             self.advance();
-                            return Some(Ok((idx, Token::GE, idx + 2)));
+                            return Some(Ok((
+                                self.line_and_col(idx),
+                                Token::GE,
+                                self.line_and_col(idx + 2),
+                            )));
                         }
-                        _ => return Some(Ok((idx, Token::GT, idx + 1))),
+                        _ => {
+                            return Some(Ok((
+                                self.line_and_col(idx),
+                                Token::GT,
+                                self.line_and_col(idx + 1),
+                            )))
+                        }
                     }
                 }
                 Some((idx, '<')) => {
@@ -332,13 +545,27 @@ impl<'input> Scanner<'input> {
                     match self.current_char {
                         Some((_, '<')) => {
                             self.advance();
-                            return Some(Ok((idx, Token::LCH, idx + 2)));
+                            return Some(Ok((
+                                self.line_and_col(idx),
+                                Token::LCH,
+                                self.line_and_col(idx + 2),
+                            )));
                         }
                         Some((_, '=')) => {
                             self.advance();
-                            return Some(Ok((idx, Token::LE, idx + 2)));
+                            return Some(Ok((
+                                self.line_and_col(idx),
+                                Token::LE,
+                                self.line_and_col(idx + 2),
+                            )));
                         }
-                        _ => return Some(Ok((idx, Token::LT, idx + 1))),
+                        _ => {
+                            return Some(Ok((
+                                self.line_and_col(idx),
+                                Token::LT,
+                                self.line_and_col(idx + 1),
+                            )))
+                        }
                     }
                 }
                 Some((idx, '/')) => {
@@ -352,7 +579,13 @@ impl<'input> Scanner<'input> {
                             self.scan_past_newline();
                             continue;
                         }
-                        _ => return Some(Ok((idx, Token::Div, idx + 1))),
+                        _ => {
+                            return Some(Ok((
+                                self.line_and_col(idx),
+                                Token::Div,
+                                self.line_and_col(idx + 1),
+                            )))
+                        }
                     }
                 }
                 Some((idx, ':')) => {
@@ -360,9 +593,27 @@ impl<'input> Scanner<'input> {
                     match self.current_char {
                         Some((_, ':')) => {
                             self.advance();
-                            return Some(Ok((idx, Token::ColonColon, idx + 2)));
+                            return Some(Ok((
+                                self.line_and_col(idx),
+                                Token::ColonColon,
+                                self.line_and_col(idx + 2),
+                            )));
                         }
-                        _ => return Some(Ok((idx, Token::Colon, idx + 1))),
+                        Some((_, '=')) => {
+                            self.advance();
+                            return Some(Ok((
+                                self.line_and_col(idx),
+                                Token::ColonEq,
+                                self.line_and_col(idx + 2),
+                            )));
+                        }
+                        _ => {
+                            return Some(Ok((
+                                self.line_and_col(idx),
+                                Token::Colon,
+                                self.line_and_col(idx + 1),
+                            )))
+                        }
                     }
                 }
                 Some((idx, '@')) => return self.scan_at_ident(idx),
@@ -380,7 +631,11 @@ impl<'input> Scanner<'input> {
                             Some((_, c)) if c.is_number() => return self.scan_number(idx),
                             _ => {
                                 self.advance();
-                                return Some(Ok((idx, Token::Minus, idx + 1)));
+                                return Some(Ok((
+                                    self.line_and_col(idx),
+                                    Token::Minus,
+                                    self.line_and_col(idx + 1),
+                                )));
                             }
                         }
                     }
@@ -391,9 +646,10 @@ impl<'input> Scanner<'input> {
                     } else {
                         // error: skip past the error character, and then return the error.
                         self.advance();
-                        return Some(Err(
-                            self.lexical_error(&format!("Invalid token char: {}", c), idx)
-                        ));
+                        return Some(Err(self.lexical_error(
+                            &format!("Invalid token char: {}", c),
+                            self.line_and_col(idx),
+                        )));
                     }
                 }
                 None => return None,
@@ -408,15 +664,15 @@ impl<'input> Scanner<'input> {
                 Some((_, c)) if c.is_id_char() => self.advance(),
                 Some((idx, _)) => {
                     return Some(Ok(self.id_or_reserved(
-                        start,
-                        idx,
+                        self.line_and_col(start),
+                        self.line_and_col(idx),
                         self.text[start..idx].to_string(),
                     )))
                 }
                 None => {
                     return Some(Ok(self.id_or_reserved(
-                        start,
-                        self.text.len(),
+                        self.line_and_col(start),
+                        self.line_and_col(self.text.len()),
                         self.text[start..self.text.len()].to_string(),
                     )))
                 }
@@ -424,7 +680,12 @@ impl<'input> Scanner<'input> {
         }
     }
 
-    fn id_or_reserved(&self, start: usize, end: usize, name: String) -> (usize, Token, usize) {
+    fn id_or_reserved(
+        &self,
+        start: Location,
+        end: Location,
+        name: String,
+    ) -> (Location, Token, Location) {
         if self.reserved.contains_key(&name) {
             return (start, self.reserved.get(&name).unwrap().clone(), end);
         } else {
@@ -449,7 +710,9 @@ impl<'input> Scanner<'input> {
                 Some(_) => {
                     self.advance();
                 }
-                None => return Err(self.lexical_error("Unterminated comment", start)),
+                None => {
+                    return Err(self.lexical_error("Unterminated comment", self.line_and_col(start)))
+                }
             }
         }
     }
@@ -473,16 +736,16 @@ impl<'input> Scanner<'input> {
                     return self.scan_float(start);
                 } else {
                     return Some(Ok((
-                        start,
+                        self.line_and_col(start),
                         Token::IntLit(self.text[start..i].parse::<i64>().unwrap()),
-                        i,
+                        self.line_and_col(i),
                     )));
                 }
             } else {
                 return Some(Ok((
-                    start,
+                    self.line_and_col(start),
                     Token::IntLit(self.text[start..(start + count)].parse::<i64>().unwrap()),
-                    start + count,
+                    self.line_and_col(start + count),
                 )));
             }
         }
@@ -502,9 +765,9 @@ impl<'input> Scanner<'input> {
                     return self.scan_float_exponent(start);
                 } else {
                     return Some(Ok((
-                        start,
-                        Token::FloatLit(self.text[start..i].parse::<f64>().unwrap()),
-                        i,
+                        self.line_and_col(start),
+                        Token::FloatLit(self.text[start..i].to_string()),
+                        self.line_and_col(start + i),
                     )));
                 }
             }
@@ -527,16 +790,16 @@ impl<'input> Scanner<'input> {
                     continue;
                 } else {
                     return Some(Ok((
-                        start,
-                        Token::FloatLit(self.text[start..i].parse::<f64>().unwrap()),
-                        i,
+                        self.line_and_col(start),
+                        Token::FloatLit(self.text[start..i].to_string()),
+                        self.line_and_col(i),
                     )));
                 }
             } else {
                 return Some(Ok((
-                    start,
-                    Token::FloatLit(self.text[start..].parse::<f64>().unwrap()),
-                    self.text.len(),
+                    self.line_and_col(start),
+                    Token::FloatLit(self.text[start..].to_string()),
+                    self.line_and_col(self.text.len()),
                 )));
             }
         }
@@ -551,9 +814,9 @@ impl<'input> Scanner<'input> {
                     '"' => {
                         self.advance();
                         return Some(Ok((
-                            start,
+                            self.line_and_col(start),
                             Token::StrLit(self.text[start + 1..i].to_string()),
-                            i + 1,
+                            self.line_and_col(i + 1),
                         )));
                     }
                     '\\' => {
@@ -592,13 +855,17 @@ impl<'input> Scanner<'input> {
                     return Ok(char::from_u32(u32::from_str_radix(&digits, 16).unwrap()).unwrap());
                 }
                 other => {
-                    return Err(
-                        self.lexical_error(&format!("Invalid escape sequence '\\{}'", other), pos)
-                    )
+                    return Err(self.lexical_error(
+                        &format!("Invalid escape sequence '\\{}'", other),
+                        self.line_and_col(pos),
+                    ))
                 }
             }
         } else {
-            return Err(self.lexical_error("Unterminated escape sequence", self.text.len()));
+            return Err(self.lexical_error(
+                "Unterminated escape sequence",
+                self.line_and_col(self.text.len()),
+            ));
         }
     }
 
@@ -628,7 +895,7 @@ impl<'input> Scanner<'input> {
                     } else {
                         return Err(self.lexical_error(
                             &format!("Invalid token: Expected at least {} chars", min),
-                            pos,
+                            self.line_and_col(pos),
                         ));
                     }
                 }
@@ -638,7 +905,7 @@ impl<'input> Scanner<'input> {
                 } else {
                     return Err(self.lexical_error(
                         &format!("Expected at least {} characters", min),
-                        self.text.len(),
+                        self.line_and_col(self.text.len()),
                     ));
                 }
             }
@@ -654,20 +921,34 @@ impl<'input> Scanner<'input> {
                 self.advance();
                 return Ok(());
             } else {
-                return Err(self.lexical_error(&format!("Expected '{}', but saw '{}'", c, q), pos));
+                return Err(self.lexical_error(
+                    &format!("Expected '{}', but saw '{}'", c, q),
+                    self.line_and_col(pos),
+                ));
             }
         } else {
-            return Err(
-                self.lexical_error(&format!("Expected character, but saw EOF"), self.text.len())
-            );
+            return Err(self.lexical_error(
+                &format!("Expected character, but saw EOF"),
+                self.line_and_col(self.text.len()),
+            ));
         }
     }
 
     fn scan_char_escape(&mut self, start: usize) -> ScannerResult {
         let c = self.scan_string_escape()?;
         match self.current_char {
-            Some((end, '\'')) => return Ok((start, Token::CharLit(c), end)),
-            _ => return Err(self.lexical_error("Unterminated char literal", start)),
+            Some((end, '\'')) => {
+                return Ok((
+                    self.line_and_col(start),
+                    Token::CharLit(c),
+                    self.line_and_col(end),
+                ))
+            }
+            _ => {
+                return Err(
+                    self.lexical_error("Unterminated char literal", self.line_and_col(start))
+                )
+            }
         }
     }
 
@@ -683,21 +964,27 @@ impl<'input> Scanner<'input> {
                     match self.current_char {
                         Some((end, '\'')) => {
                             self.advance();
-                            return Ok((start, Token::CharLit(c), end));
+                            return Ok((
+                                self.line_and_col(start),
+                                Token::CharLit(c),
+                                self.line_and_col(end),
+                            ));
                         }
                         Some((i, _)) => {
-                            return Err(self.lexical_error("Invalid character literal", i))
+                            return Err(self
+                                .lexical_error("Invalid character literal", self.line_and_col(i)))
                         }
                         _ => {
-                            return Err(
-                                self.lexical_error("Invalid character literal", self.text.len())
-                            )
+                            return Err(self.lexical_error(
+                                "Invalid character literal",
+                                self.line_and_col(self.text.len()),
+                            ))
                         }
                     }
                 }
             }
         } else {
-            return Err(self.lexical_error("Invalid character literal", start));
+            return Err(self.lexical_error("Invalid character literal", self.line_and_col(start)));
         }
     }
 
@@ -713,7 +1000,7 @@ impl<'input> Scanner<'input> {
     fn scan_at_ident(
         &mut self,
         start: usize,
-    ) -> Option<Result<(usize, Token, usize), LexicalError>> {
+    ) -> Option<Result<(Location, Token, Location), LexicalError>> {
         self.advance();
         let mut count = 1;
         while self.current_char_is(|c| c.is_alphabetic()) {
@@ -723,10 +1010,15 @@ impl<'input> Scanner<'input> {
         let content = self.text[start..start + count].to_string();
         let maybe_token = self.reserved.get(&content);
         match maybe_token {
-            Some(tok) => Some(Ok((start, tok.clone(), start + count))),
-            None => Some(Err(
-                self.lexical_error(&format!("Invalid token {}", content), start)
-            )),
+            Some(tok) => Some(Ok((
+                self.line_and_col(start),
+                tok.clone(),
+                self.line_and_col(start + count),
+            ))),
+            None => Some(Err(self.lexical_error(
+                &format!("Invalid token {}", content),
+                self.line_and_col(start),
+            ))),
         }
     }
 
@@ -739,6 +1031,10 @@ impl<'input> Scanner<'input> {
             count += 1
         }
         let name = self.text[start..start + count].to_string();
-        return Some(Ok((start, Token::TypeVar(name), start + count)));
+        return Some(Ok((
+            self.line_and_col(start),
+            Token::TypeVar(name),
+            self.line_and_col(start + count),
+        )));
     }
 }

@@ -1,5 +1,5 @@
 use crate::ast;
-use crate::lexer::{LexicalError, Token};
+use crate::lexer::{LexicalError, Token, Location};
 use either::Either::{self,Left,Right};
 
 grammar<'input>(input: &'input str, hadron_name: &'input str);
@@ -49,9 +49,9 @@ pub QuarkDef: ast::QuarkDef = {
         type_params: tps,
         value_params: params,
         provides: ps,
+        channels: channels,
         slots: slots,
         behaviors: behaviors,
-        channels: channels,
         initial_beh: (beh.to_string(), es)
       }
 
@@ -101,7 +101,8 @@ SlotDecl: ast::SlotDecl = {
 }
 
 ProvidesBlock: Vec<ast::Type> = {
-    <("provides" <CommaOpt<Type>>)>
+    <("provides" <CommaOpt<Type>>)>,
+    => Vec::new()
 
 }
 
@@ -116,7 +117,7 @@ TypeParamBlock: Vec<ast::TypeParamSpec> = {
 TypeParamSpec: ast::TypeParamSpec = {
     <t:TYPEVAR> <constraint:(":" <Type>)?> =>
 
-    ast::TypeParamSpec{type_var: ast::TypeVar(t), constraint: constraint}
+    ast::TypeParamSpec{type_var: ast::TypeVar{s:t}, constraint: constraint}
 }
 
 ValueParamBlock: Vec<ast::ValueParamSpec> = {
@@ -155,7 +156,7 @@ Action: Box<ast::Action> = {
     "par" "{" <acts:Action+> "}" => Box::new(ast::Action::Par(acts)),
     "seq" "{" <acts:Action+> "}" => Box::new(ast::Action::Seq(acts)),
     "select" "{" <acts:Action+> "}"  => Box::new(ast::Action::Select(acts)),
-    "send" <ch:ChannelExpr> "(" <e:Expr> ")" => Box::new(ast::Action::Send{ target: ch, value: e}),
+    "send" <ch:Expr> "(" <e:Expr> ")" => Box::new(ast::Action::Send{ target: ch, value: e}),
     <ReceiveAction>,
     <lval:SYMBOL> ":=" <e:Expr> => Box::new(ast::Action::Assign{target: lval, value: e}),
     "var" <s:SYMBOL> ":" <t:Type> "=" <e:Expr> => Box::new(ast::Action::VarDecl{
@@ -169,7 +170,7 @@ Action: Box<ast::Action> = {
 
 
 ReceiveAction: Box<ast::Action> = {
-    "rec" <ch:ChannelExpr> "(" <s:SYMBOL> ")" "do"
+    "rec"  <ch:Expr>  "do"
         <recs:ReceiveClause+>
         <else_acts:("else" <Action+>)?>
     "end" => Box::new(ast::Action::Recv{ source: ch, clauses: recs, else_clause: else_acts})
@@ -225,7 +226,7 @@ Type: ast::Type = {
                           type_arguments: tas},
 
     "chan" <d:Direction> <t:Type> => ast::Type::ChannelType(Box::new(t), d),
-    <tv:TYPEVAR> => ast::Type::Var(ast::TypeVar(tv))
+    <tv:TYPEVAR> => ast::Type::Var(ast::TypeVar{s:tv})
 }
 
 
@@ -239,33 +240,34 @@ BoxedExprList: Vec<Box<ast::Expr>> = {
 
 Expr: ast::Expr = {
     #[precedence(level="0")]
-    <ChannelExpr>,
     "create" <t:Type> "(" <exprs:BoxedExprList> ")" => ast::Expr::CreateQuarkExpr{quark_type: t, args: exprs },
     <BosonValueExpr>,
     <s:STRLIT> => ast::Expr::LitStringExpr(s),
     <i:INTLIT> => ast::Expr::LitIntExpr(i),
     <f:FLOATLIT> => ast::Expr::LitFloatExpr(f),
     <c:CHARLIT> => ast::Expr::LitCharExpr(c),
+    <SYMBOL> => ast::Expr::VariableExpr(<>),
     "(" <Expr> ")",
-    <lv:SYMBOL> => ast::Expr::VariableExpr(lv),
     #[precedence(level="1")] #[assoc(side="left")]
     "-" <e:Boxed<Expr>> => ast::Expr::OperatorExpr{ op: ast::Operator::OpMinus, args: vec![e] },
     "not" <e:Boxed<Expr>> => ast::Expr::OperatorExpr{ op: ast::Operator::OpNot, args: vec![e] },
+
     #[precedence(level="2")] #[assoc(side="left")]
-    <l:Boxed<Expr>> <m:MultOp> <r:Boxed<Expr>> => ast::Expr::OperatorExpr{ op: m, args: vec![l, r] },
+    <owner:Boxed<Expr>>   <ch:("." <SYMBOL>)>  =>
+                 ast::Expr::ChannelExpr(owner, ch),
+
     #[precedence(level="3")] #[assoc(side="left")]
-    <l:Boxed<Expr>> <m:AddOp> <r:Boxed<Expr>> => ast::Expr::OperatorExpr{ op: m, args: vec![l, r] },
+    <l:Boxed<Expr>> <m:MultOp> <r:Boxed<Expr>> => ast::Expr::OperatorExpr{ op: m, args: vec![l, r] },
     #[precedence(level="4")] #[assoc(side="left")]
-    <l:Boxed<Expr>> <m:CompareOp> <r:Boxed<Expr>> => ast::Expr::OperatorExpr{ op: m, args: vec![l, r] },
+    <l:Boxed<Expr>> <m:AddOp> <r:Boxed<Expr>> => ast::Expr::OperatorExpr{ op: m, args: vec![l, r] },
     #[precedence(level="5")] #[assoc(side="left")]
+    <l:Boxed<Expr>> <m:CompareOp> <r:Boxed<Expr>> => ast::Expr::OperatorExpr{ op: m, args: vec![l, r] },
+    #[precedence(level="6")] #[assoc(side="left")]
     <l:Boxed<Expr>> <m:LogicOp> <r:Boxed<Expr>> => ast::Expr::OperatorExpr{ op: m, args: vec![l, r] }
 
 
 }
 
-ChannelExpr: ast::Expr = {
-  "<<" <id:(<Identifier> ".")?>  <s:SYMBOL> ">>" => ast::Expr::ChannelExpr(id, s)
-}
 
 MultOp: ast::Operator = {
      <"*"> => ast::Operator::OpTimes,
@@ -293,7 +295,7 @@ LogicOp: ast::Operator = {
 }
 
 BosonValueExpr: ast::Expr = {
-   <type_args:BoxedTypeArgsBlock?> <boson_name:Identifier>
+   "new" <type_args:BoxedTypeArgsBlock?> <boson_name:Identifier>
     <args:BosonArgs> => {
         match args {
             Left(a) => ast::Expr::BosonTupleExpr{tuple_type: boson_name,
@@ -340,18 +342,24 @@ Boxed<T>: Box<T> = {
     <t:T> => Box::new(t)
 }
 
- Bar<T>: Vec<T> = {
+Bar<T>: Vec<T> = {
     <mut v:(<T> "|")*> <e:T> => {
                     v.push(e);
                     v
     }
 };
 
+Dotted<T>: Vec<T> = {
+    <mut v:(<T> ".")*> <e:T> => {
+                    v.push(e);
+                    v
+    }
+}
 
 
 
 extern {
-    type Location = usize;
+    type Location = Location;
     type Error = LexicalError;
     enum Token {
         "," => Token::Comma,
@@ -407,6 +415,7 @@ extern {
         "hadron" => Token::Hadron,
         "In" => Token::In,
         "is" => Token::Is,
+        "new" => Token::New,
         "not" => Token::Not,
         "on" => Token::On,
         "or" => Token::Or,
@@ -428,7 +437,7 @@ extern {
         TYPEVAR => Token::TypeVar(<String>),
         STRLIT => Token::StrLit(<String>),
         INTLIT => Token::IntLit(<i64>),
-        FLOATLIT => Token::FloatLit(<f64>),
+        FLOATLIT => Token::FloatLit(<String>),
         CHARLIT => Token::CharLit(<char>),
     }
 }

@@ -31,7 +31,6 @@ impl<'a> LineNumberIndex<'a> {
         if pos > self.input.len() {
             Err(LexicalError {
                 msg: format!("Position {} is beyond the end of the input", pos),
-                pos: pos,
                 line: 0,
                 column: 0,
             })

@@ -23,10 +23,10 @@ fn test_scanner() {
     assert_token_is(lex.scan_token(), Token::Symbol("m".to_string()));
     assert_token_is(lex.scan_token(), Token::AtFlavor);
     assert_token_is(lex.scan_token(), Token::Equal);
-    assert_token_is(lex.scan_token(), Token::FloatLit(3.134));
+    assert_token_is(lex.scan_token(), Token::FloatLit("3.134".to_string()));
     assert_token_is(lex.scan_token(), Token::Minus);
     assert_token_is(lex.scan_token(), Token::EqualEqual);
-    assert_token_is(lex.scan_token(), Token::FloatLit(3.243e14));
+    assert_token_is(lex.scan_token(), Token::FloatLit("32.43e13".to_string()));
 }
 
 #[test]
