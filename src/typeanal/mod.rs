@@ -60,7 +60,7 @@ use crate::ast::*;
 * compiler state, which owns both the ASTs and the TypeAnalysisContext.
 */
 
-#[derive(Clone, PartialEq, Hash, Debug)]
+#[derive(Clone, PartialEq, Hash, Debug, Eq)]
 pub enum InstantiatedType {
     ConcreteType(Type),
     UnboundType(InstantiatedTypeVar),
@@ -69,7 +69,8 @@ pub enum InstantiatedType {
 pub struct TypeAnalysisContext<'a> {
     type_var_indices: HashMap<TypeVar, u32>,
     instantiated_type_vars: Vec<InstantiatedTypeVar>,
-    bindings: HashMap<&'a InstantiatedTypeVar, InstantiatedType>,
+    instantiated_defs: Vec<InstantiatedDef<'a>>,
+    bindings: HashMap<InstantiatedTypeVar, InstantiatedType>,
 }
 
 /// Each time a parameter type is instantiated, we need
@@ -83,11 +84,19 @@ impl<'a> TypeAnalysisContext<'a> {
         TypeAnalysisContext {
             type_var_indices: HashMap::new(),
             instantiated_type_vars: Vec::new(),
+            instantiated_defs: Vec::new(),
             bindings: HashMap::new(),
         }
     }
 
-    pub fn instantiate_type_var(&'a mut self, t: &TypeVar) -> InstantiatedTypeVar {
+    pub fn get_binding_for(
+        &'a self,
+        typevar: &InstantiatedTypeVar,
+    ) -> Option<&'a InstantiatedType> {
+        self.bindings.get(typevar)
+    }
+
+    pub fn instantiate_type_var(&mut self, t: &TypeVar) -> InstantiatedTypeVar {
         let idx = self.type_var_indices.get_mut(t);
         let name = match idx {
             Some(idx) => {
@@ -107,21 +116,37 @@ impl<'a> TypeAnalysisContext<'a> {
         self.instantiated_type_vars.push(result.clone());
         result
     }
+
+    pub fn instantiate_def(&mut self, def: &Definition) {
+        let mut instantiated_def = InstantiatedDef::new(&def);
+        self.instantiated_defs.push(instantiated_def);
+        def.get_type_vars().map(|tvs| {
+            for tv in tvs {
+                let inst = self.instantiate_type_var(&tv);
+            }
+        });
+    }
 }
 
-#[derive(Hash, PartialEq, Debug, Clone)]
-pub struct InstantiatedTypeVar {
-    original_name: TypeVar,
-    instantiated_name: Symbol,
-}
-
-trait Instantiated {
-    fn get_uninstantiated_type_vars(&self, context: &mut TypeAnalysisContext) -> Vec<TypeVar>;
-    fn get_unbound_type_vars(&self, context: &mut TypeAnalysisContext) -> Vec<InstantiatedTypeVar>;
-    fn bind_type_vars(&mut self, new_bindings: Vec<(InstantiatedTypeVar, InstantiatedTypeVar)>);
-}
+pub type InstantiatedTypeVar = String;
 
 struct InstantiatedDef<'a> {
     pub base_node: &'a Definition,
-    pub instantiated_typevars: Vec<&'a InstantiatedTypeVar>,
+    pub instantiated_typevars: Vec<InstantiatedTypeVar>,
+    pub mapping: Vec<(TypeVar, &'a InstantiatedTypeVar)>,
+}
+
+impl<'a> InstantiatedDef<'a> {
+    fn new(def: &'a Definition) -> InstantiatedDef {
+        InstantiatedDef {
+            base_node: def,
+            instantiated_typevars: Vec::new(),
+            mapping: Vec::new(),
+        }
+    }
+
+    fn add_instantiated(&'a mut self, inst: &'a InstantiatedTypeVar, tv: TypeVar) {
+        self.instantiated_typevars.push(inst);
+        self.mapping.push((tv, inst))
+    }
 }

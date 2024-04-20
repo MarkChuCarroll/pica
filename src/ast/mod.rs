@@ -1,3 +1,5 @@
+use std::{collections, fmt::Debug};
+
 use crate::twist::{Renderable, Twist, Twistable};
 
 pub type Symbol = String;
@@ -8,7 +10,11 @@ impl Renderable for Symbol {
     }
 }
 
-trait Instantiable {}
+trait Instantiable<T> {
+    fn free_typevars(&self) -> Vec<TypeVar>;
+    fn bind(&self, tv: TypeVar, with: &Type) -> T;
+
+}
 
 pub type Identifier = Vec<Symbol>;
 impl Renderable for Identifier {
@@ -73,6 +79,42 @@ pub enum Definition {
     F(FlavorDef),
 }
 
+impl Definition {
+    pub fn get_type_vars(&self) -> Option<Vec<TypeVar>> {
+        fn extract_typevars(type_params: &Option<Vec<TypeParamSpec>>) -> Option<Vec<TypeVar>> {
+            type_params.as_ref().map(|tps| {
+                tps.into_iter()
+                    .map(|tp| tp.type_var.clone())
+                    .collect::<Vec<TypeVar>>()
+            })
+        }
+        match self {
+            Definition::Q(q) => extract_typevars(&q.type_params)
+            Definition::B(b) => extract_typevars(&b.type_params),
+            Definition::F(f) => extract_typevars(&f.type_params),
+        }
+    }
+}
+
+impl Instantiable<Definition> for Definition {
+    fn free_typevars(&self) -> Vec<TypeVar> {
+        match self {
+            Definition::Q(quark_def) => quark_def.free_typevars(),
+            Definition::B(boson_def) => boson_def.free_typevars(),
+            Definition::F(flavor_def) => flavor_def.free_typevars()
+        }
+    }
+
+    fn bind(&self, tv: TypeVar, with: &Type) -> Definition {
+        match self {
+            Definition::Q(quark_def) => Self::Q(quark_def.bind(tv, with)),
+            Definition::B(boson_def) => Self::B(boson_def.bind(tv, with)),
+            Definition::F(flavor_def) => Self::F(flavor_def.bind(tv, with))
+        }
+    }
+}
+
+
 impl Twistable for Definition {
     fn twist(&self) -> Twist {
         match self {
@@ -130,6 +172,17 @@ impl Twistable for QuarkDef {
         )
     }
 }
+
+impl Instantiable<QuarkDef> for QuarkDef {
+    fn free_typevars(&self) -> Vec<TypeVar> {
+        todo!()
+    }
+
+    fn bind(&self, tv: TypeVar, with: &Type) -> QuarkDef {
+        todo!()
+    }
+}
+
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum Direction {
@@ -492,7 +545,7 @@ impl Twistable for Action {
     }
 }
 
-#[derive(Clone, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum Type {
     Named {
         base_type_id: Identifier,
@@ -523,6 +576,38 @@ impl Twistable for Type {
                 ],
             ),
             Self::Var(t) => Twist::attr("TypeVar".to_string(), t.render()),
+        }
+    }
+}
+
+impl Instantiable<Type> for Type {
+    fn free_typevars(&self) -> Vec<TypeVar> {
+        match self {
+            Type::Named { type_arguments: Some(tas), .. } => 
+                tas.iter().flat_map(|it|  it.free_typevars()).collect::<Vec<TypeVar>>(),
+
+            Type::Named { type_arguments: None, ..} => 
+                Vec::new(),
+            Type::ChannelType(ch, _) => ch.free_typevars(),
+            Type::Var(type_var) => vec!(type_var.clone())
+        }
+    }
+
+    fn bind(&self, tv: TypeVar, with: &Type) -> Type {
+        match &self {
+            Type::Named { type_arguments: None, .. } => 
+                self.clone(),
+            Type::Named { base_type_id, type_arguments: Some(tas) } => 
+                Self::Named { base_type_id: base_type_id.clone(), type_arguments: Some(tas.iter().map(|it| Box::new(it.bind(tv.clone(), with))).collect::<Vec<Box<Type>>>()) },
+            Type::ChannelType(base, direction) => 
+               Self::ChannelType(Box::new(base.bind(tv, with)), direction.clone()),
+            Type::Var(type_var) => {
+                if type_var.s == tv.s {
+                    Self::Var(tv)
+                } else {
+                    Self::Var(type_var.clone())
+                }
+            }
         }
     }
 }
