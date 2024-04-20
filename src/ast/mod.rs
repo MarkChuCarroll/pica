@@ -73,6 +73,23 @@ pub enum Definition {
     F(FlavorDef),
 }
 
+impl Definition {
+    pub fn get_type_vars(&self) -> Option<Vec<TypeVar>> {
+        fn extract_typevars(type_params: Option<Vec<TypeParamSpec>>) -> Option<Vec<TypeVar>> {
+            type_params.map(|tps| {
+                tps.into_iter()
+                    .map(|tp| tp.type_var)
+                    .collect::<Vec<TypeVar>>()
+            })
+        }
+        match self {
+            Definition::Q(q) => extract_typevars(q.type_params),
+            Definition::B(b) => extract_typevars(b.type_params),
+            Definition::F(f) => extract_typevars(f.type_params),
+        }
+    }
+}
+
 impl Twistable for Definition {
     fn twist(&self) -> Twist {
         match self {
@@ -492,7 +509,7 @@ impl Twistable for Action {
     }
 }
 
-#[derive(Clone, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum Type {
     Named {
         base_type_id: Identifier,
