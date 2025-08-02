@@ -1,0 +1,336 @@
+
+
+Pica {
+  Hadron = UseDecl* Definition+
+
+  Ident = Ident "::" uname -- scopedIdent
+        | uname -- simpleIdent
+
+  UseDecl = 
+      kwUse lbrace NonemptyListOf<uname, comma> rbrace kwFrom Ident -- useNames
+    | kwUse Ident -- useHadron
+
+
+
+  Definition = 
+      FlavorDef 
+    | QuarkDef 
+    | BosonDef 
+
+  TypeParamBlock = lbrack TypeParamList rbrack
+
+  TypeParamList = TypeParamList comma TypeParamSpec -- list
+  | TypeParamSpec -- single
+
+  TypeParamSpec = tvar ( colon SType )?
+
+  FlavorDef = 
+      kwFlavor uname TypeParamBlock? ComposesBlock? kwIs 
+        ChannelDef* 
+      kwEnd kwAtFlavor?
+
+  QuarkDef =
+    kwQuark uname TypeParamBlock? ValueParamBlock ProvidesBlock? kwIs
+      SlotDef*
+      BehaviorDef+
+      kwAdopt uname ValueParamBlock
+    kwEnd kwAtQuark?
+
+  BosonDef = 
+    kwBoson uname TypeParamBlock? kwIs 
+      BosonOptionDef+ 
+    kwEnd kwAtBoson?
+
+  BosonOptionDef =
+      uname lparen ListOf<SType, comma> rparen -- bosonTupleOption
+    | uname lbrace NonemptyListOf<TypedName, comma> rbrace -- bosonStructOption
+
+
+
+  ChannelDef = kwChan lname colon Direction SType
+
+  Direction = 
+      kwIn 
+    | kwOut 
+    | kwBoth
+
+  ValueParamBlock = lparen ListOf<TypedName, comma> rparen
+
+  TypedName = lname colon SType
+
+  SlotDef = kwSlot TypedName
+
+  ProvidesBlock = kwProvides NonemptyListOf<ChannelDef, comma>
+
+  ComposesBlock = kwComposes NonemptyListOf<SType, comma>
+
+  BehaviorDef = 
+    kwBehavior uname ValueParamBlock kwIs 
+      Action+ 
+    kwEnd kwAtBehavior?
+
+  // actions
+
+  Action = 
+      ParAction 
+    | SeqAction 
+    | SelectAction 
+    | SendAction 
+    | ReceiveAction 
+    | AssignAction 
+    | LocalAction 
+    | CondAction 
+    | WhileAction 
+    | AdoptAction 
+    | ExitAction
+
+  ParAction = kwPar lbrace Action+ rbrace
+
+  AssignAction = lname ceq Expr
+  
+  AdoptAction = kwAdopt uname lparen ListOf<Expr, comma> rparen
+
+  SeqAction = kwSeq lbrace Action+ rbrace
+
+  SelectAction = kwSelect lbrace Action+ rbrace
+
+  SendAction = kwSend Expr lparen Expr rparen
+  
+  LocalAction = kwLocal lname colon SType eq Expr
+
+  ReceiveAction = 
+      kwRecv Expr kwDo 
+        RecvClause+ 
+        ( kwElse Action+ )? 
+      kwEnd kwAtRecv?
+
+  RecvClause = 
+      kwOn Pattern kwDo 
+        Action+ 
+      kwEnd 
+
+  Pattern =
+      Ident lparen ListOf<lname, comma> rparen -- tuple
+    | Ident lbrace ListOf<StructFieldPattern, comma> rbrace -- struct
+
+  StructFieldPattern = lname "->" lname
+
+  CondAction = 
+    kwCond 
+      CondClause+ 
+      (kwElse Action+)?
+    kwEnd kwAtCond?
+
+  CondClause = 
+    Expr kwThen 
+      Action+
+    kwEnd
+
+  WhileAction = 
+    kwWhile Expr kwDo 
+      Action+
+    kwEnd kwAtWhile?
+  
+  ExitAction = kwExit
+
+  // Types
+  
+  SType = 
+      Ident TypeParams? -- namedType
+    | tvar -- typeVar
+    | kwChan Direction SType -- chanType
+
+  TypeParams = lbrack NonemptyListOf<SType, comma> rbrack 
+
+  // Expressions
+  Expr = LogicExpr
+
+  LogicOp = kwAnd | kwOr
+
+  LogicExpr = 
+        LogicExpr LogicOp CompareExpr -- binaryLogic
+      | CompareExpr -- binaryFallthrough
+
+  CompareOp = eqeq | neq | gt | lt | le | ge 
+
+  CompareExpr = 
+      CompareExpr CompareOp AddExpr  -- binaryCompare
+    | AddExpr -- compareFallthrough
+
+  AddOp = plus | minus
+
+  AddExpr = 
+      AddExpr AddOp MultExpr  -- binaryAdd
+    | MultExpr -- addFallthrough
+
+  MultOp = times | div | mod 
+
+  MultExpr = 
+      MultExpr MultOp ExpExpr -- binaryMult
+    | ExpExpr -- multFallthrough
+     
+  ExpExpr = 
+      ExpExpr exp UnaryExpr  -- binaryExp
+    | UnaryExpr -- expFallthrough
+
+  UnaryOp = minus | kwNot
+
+  UnaryExpr = 
+      UnaryOp UnaryExpr -- unaryWithOp
+    | PostfixExpr -- unaryFallthrough
+
+  PostfixExpr = 
+      PostfixExpr "." lname -- postfixField
+    | PrimaryExpr -- postfixFallthrough
+
+  PrimaryExpr = 
+      CreateExpr
+    | ParenExpr 
+    | BosonValueExpr 
+    |	strlit
+    | intlit
+    | floatlit
+    | charlit
+    | VarRefExpr
+
+  VarRefExpr = lname
+              
+  ParenExpr = lparen Expr rparen
+
+
+  CreateExpr = kwCreate SType lparen ListOf<Expr, comma> rparen
+
+  BosonValueExpr = 
+    Ident lparen ListOf<Expr, comma> rparen -- tuple
+  | Ident lbrace NonemptyListOf<BosonStructField, comma> rbrace -- struct
+
+
+  BosonStructField = lname colon Expr 
+
+  // Punctuation.
+  plus = "+"
+  minus = "-"
+  times = "*"
+  div = "/"
+  mod = "%"
+  exp = "^"
+  eq = "=" ~("=")
+  neq = "!" "="
+  eqeq  = "=" "="
+  colon = ":" ~("=")
+  ceq = ":" "=" 
+  lt = "<" ~("=")
+  le = "<" "="
+  gt = ">" ~("=")
+  ge = ">="
+  comma = ","
+  lparen = "("
+  rparen = ")"
+  lbrace = "{"
+  rbrace = "}"
+  lbrack = "["
+  rbrack = "]"
+  
+
+  kwAnd = "and"
+  kwAdopt = "adopt"
+  kwBehavior = "behavior"
+  kwAtBehavior = "@behavior"
+  kwBoson = "boson"
+  kwAtBoson = "@boson"
+  kwBoth = "both"
+  kwChan = "chan" 
+  kwComposes = "composes"
+  kwCond = "cond"
+  kwAtCond = "@cond"
+  kwCreate = "create"
+  kwDo = "do"
+  kwElse = "else"
+  kwEnd = "end"
+  kwExit = "exit"
+  kwFlavor = "flavor"
+  kwAtFlavor = "@flavor"
+  kwFrom = "from"
+  kwIn = "in"
+  kwIs = "is"
+  kwLocal = "local"
+  kwNot = "not"
+  kwOn = "on"
+  kwOr = "or"
+  kwPar = "par"
+  kwProvides = "provides"
+  kwOut = "out"
+  kwQuark = "quark"
+  kwAtQuark = "@quark"
+  kwRecv = "recv"
+  kwAtRecv = "@recv"
+  kwSelect = "select"
+  kwSend = "send"
+  kwSeq = "seq"
+  kwSlot = "slot"
+  kwThen = "then"
+  kwUse = "use"
+  kwWhile = "while"
+  kwAtWhile = "@while"
+
+  keyword = 
+      kwAnd | kwAdopt | kwBehavior | kwAtBehavior | kwBoson | kwAtBoson 
+    | kwBoth | kwChan | kwComposes | kwCond | kwAtCond | kwCreate | kwDo | kwElse
+    | kwEnd | kwExit | kwFlavor | kwAtFlavor | kwFrom | kwIn | kwIs | kwLocal | kwNot | kwOn
+    | kwOr | kwPar | kwProvides | kwOut | kwQuark | kwAtQuark | kwRecv 
+    | kwAtRecv | kwSelect | kwSend | kwSlot | kwThen | kwUse | kwWhile | kwAtWhile
+
+  uname = upper (letter | digit | "_")*
+  
+  lname = lower (letter | digit | "_")* 
+  
+  tvar = "`" uname 
+  
+
+  digits = digit+
+
+  decimalPart = "." digit*
+
+  expPart = "e" minus? digits
+
+  strlit = "\"" (nonQuoteOrBackslashChar | escapeSequence)* "\""
+
+  nonQuoteOrBackslashChar = ~("\"" | "\\") any
+
+  escapeSequence = 
+      "\\\\" -- backslash
+    | "\\\"" -- doubleQuote
+    | "\\n" -- newline
+    | "\\r" -- carriageReturn
+    | "\\t" -- tab
+    | "\\v" -- verticalTab
+    | "\\b" -- backspace
+    | "\\f" -- formFeed
+    | "\\u{" hexDigit hexDigit? hexDigit? hexDigit? hexDigit? hexDigit? rbrace -- unicodeCodePoint
+    | "\\u" hexDigit hexDigit hexDigit hexDigit -- unicodeEscape
+    | "\\x" hexDigit hexDigit -- hexEscape
+
+
+
+  intlit = minus? digits ~(decimalPart | expPart)
+
+  floatlit = "minus"? digits decimalPart? expPart?
+    
+  charlit = "'" (nonQuoteOrBackslashChar | escapeSequence) "'"
+
+  // Comments
+  whiteSpace = "\t" | " " | lineTerminator
+
+  space += comment | lineTerminator
+
+  comment = multiLineComment | singleLineComment
+
+  lineTerminator = "\n" | "\r" | "\u2028" | "\u2029"
+
+  multiLineComment = "/*" (~"*/" any)* "*/"
+
+  singleLineComment = "--" (~lineTerminator any)
+}
+
+
+

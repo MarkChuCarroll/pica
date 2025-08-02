@@ -1,33 +1,35 @@
 
-use IO{InputStream}
+use {InputStream, Frotz, Flabber} from IO
 
 boson ScannerOutput is
     Token{type: String, content: String, line: Int}
-|  EndOfStream(Unit)
-|  ScanError{message: String, line: Int}
+  EndOfStream(Unit)
+  ScanError{message: String, line: Int}
 end
 
 
-quark Scanner(in: InputStream) is
-     chan output: ScannerOutput
-     slot currentToken: String = ""
-     behavior main() is
-        rec in.chars do
+quark Scanner[`A, `B](inputStream: InputStream)  
+provides
+     chan output: out ScannerOutput
+     is
+     slot currentToken: String 
+     behavior Main() is
+        recv in.chars do
             on More(c) do
                 currentToken := currentToken +  c
                 cond
                   c == end_of_token then
-                    send output (new Token{type: "t", content: currentToken, line: 27})
+                    send output (Token{type: "t", content: currentToken, line: 27})
                     currentToken := ""
                   end
                 end
             end
             on End(u) do
-               send output(new Token{type: "t", content: currentToken, line: line_number})
-               send output(new EndOfStream(Unit))
+               send output(Token{type: "t", content: currentToken, line: line_number})
+               send output(EndOfStream(Unit()))
                exit
             end
         end
     end@behavior
-    adopt main()
+    adopt Main()
 end@quark
